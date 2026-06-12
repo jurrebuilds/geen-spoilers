@@ -114,9 +114,75 @@ export default function Player({ match, onBack }) {
   const draggingRef = useRef(false)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  const readyRef = useRef(false)
+  const pendingPlayRef = useRef(false)
+  const apiFailedRef = useRef(false)
+  const watchdogRef = useRef(null)
 
+  // De speler wordt alvast opgebouwd zodra de bron bekend is, onzichtbaar
+  // achter de poster. Mobiel (iOS/Android) staat afspelen met geluid alleen
+  // toe als playVideo() synchroon binnen de tik wordt aangeroepen; een speler
+  // die pas ná de tik wordt opgebouwd blijft daar eindeloos op "Laden" staan.
   useEffect(() => {
+    let cancelled = false
+    readyRef.current = false
+    ;(async () => {
+      let YT
+      try {
+        YT = await loadYouTubeAPI()
+      } catch {
+        apiFailedRef.current = true
+        if (!cancelled && pendingPlayRef.current) setPhase('error')
+        return
+      }
+      if (cancelled || !mountRef.current) return
+
+      playerRef.current = new YT.Player(mountRef.current, {
+        host: 'https://www.youtube-nocookie.com',
+        videoId: source === 'samenvatting' ? match.youtubeId : match.livestreamId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          iv_load_policy: 3,
+          fs: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: (e) => {
+            readyRef.current = true
+            // tik kwam binnen voordat de speler klaar was: alsnog starten
+            if (pendingPlayRef.current) {
+              pendingPlayRef.current = false
+              e.target.playVideo()
+            }
+          },
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.ENDED) {
+              setPhase('ended')
+            } else if (e.data === YT.PlayerState.PAUSED) {
+              setPhase('paused')
+            } else if (
+              e.data === YT.PlayerState.PLAYING ||
+              e.data === YT.PlayerState.BUFFERING
+            ) {
+              clearTimeout(watchdogRef.current)
+              // niet terugschakelen vanuit het eindscherm
+              if (phaseRef.current !== 'ended') setPhase('playing')
+            }
+          },
+          onError: () => {
+            setPhase('error')
+          },
+        },
+      })
+    })()
     return () => {
+      cancelled = true
+      clearTimeout(watchdogRef.current)
+      pendingPlayRef.current = false
       if (playerRef.current) {
         try {
           playerRef.current.destroy()
@@ -126,55 +192,31 @@ export default function Player({ match, onBack }) {
         playerRef.current = null
       }
     }
-  }, [])
+  }, [source, match.youtubeId, match.livestreamId])
 
-  const start = async () => {
-    setPhase('loading')
-    let YT
-    try {
-      YT = await loadYouTubeAPI()
-    } catch {
+  const start = () => {
+    if (apiFailedRef.current) {
       setPhase('error')
       return
     }
-    if (!mountRef.current) return
-
-    playerRef.current = new YT.Player(mountRef.current, {
-      host: 'https://www.youtube-nocookie.com',
-      videoId: source === 'samenvatting' ? match.youtubeId : match.livestreamId,
-      width: '100%',
-      height: '100%',
-      playerVars: {
-        autoplay: 1,
-        rel: 0,
-        modestbranding: 1,
-        playsinline: 1,
-        iv_load_policy: 3,
-        fs: 1,
-        origin: window.location.origin,
-      },
-      events: {
-        onReady: (e) => {
-          e.target.playVideo()
-        },
-        onStateChange: (e) => {
-          if (e.data === YT.PlayerState.ENDED) {
-            setPhase('ended')
-          } else if (e.data === YT.PlayerState.PAUSED) {
-            setPhase('paused')
-          } else if (
-            e.data === YT.PlayerState.PLAYING ||
-            e.data === YT.PlayerState.BUFFERING
-          ) {
-            // niet terugschakelen vanuit het eindscherm
-            if (phaseRef.current !== 'ended') setPhase('playing')
-          }
-        },
-        onError: () => {
-          setPhase('error')
-        },
-      },
-    })
+    setPhase('loading')
+    if (readyRef.current && playerRef.current) {
+      // synchroon binnen de tik: alleen zo staat mobiel geluid toe
+      try {
+        playerRef.current.playVideo()
+      } catch {
+        // speler nog niet klaar
+      }
+    } else {
+      pendingPlayRef.current = true
+    }
+    // Vangnet: start het afspelen toch niet (bijv. omdat de speler nog niet
+    // klaar was en de start buiten de tik werd geblokkeerd), val dan terug op
+    // het pauzepaneel — die tik roept playVideo() wél direct aan.
+    clearTimeout(watchdogRef.current)
+    watchdogRef.current = setTimeout(() => {
+      if (phaseRef.current === 'loading') setPhase('paused')
+    }, 4000)
   }
 
   const resume = () => {
@@ -204,17 +246,10 @@ export default function Player({ match, onBack }) {
     }
   }
 
-  // Wisselen tussen samenvatting en hele wedstrijd: speler opnieuw opbouwen
+  // Wisselen tussen samenvatting en hele wedstrijd: het effect hierboven
+  // ruimt de oude speler op en bouwt er een op voor de nieuwe bron
   const wisselBron = (nieuw) => {
     if (nieuw === source) return
-    if (playerRef.current) {
-      try {
-        playerRef.current.destroy()
-      } catch {
-        // speler was al opgeruimd
-      }
-      playerRef.current = null
-    }
     draggingRef.current = false
     setDragFrac(null)
     setProgress({ time: 0, duration: 0 })
