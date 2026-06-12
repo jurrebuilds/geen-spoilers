@@ -40,6 +40,17 @@ Alle 104 WK-wedstrijden staan in één bestand: `src/data/matches.js` (volledig 
 - Zodra de video is afgelopen, schuift er direct een paneel over het YouTube-eindscherm heen.
 - Als een video niet afspeelbaar is, verschijnt een foutmelding. Er wordt nooit teruggevallen op YouTube-beelden.
 
+## Contact
+
+Rechts in de titelbalk zit een kleine "Contact"-link met een berichtformulier erachter. Het formulier post naar `api/contact.js` (een Vercel-functie), die het bericht als e-mail doorstuurt via [formsubmit.co](https://formsubmit.co) (gratis, geen account). Het e-mailadres van de beheerder staat alleen in de Vercel-omgevingsvariabele `CONTACT_EMAIL` — nergens in de frontend of in git. Een verborgen honingpotveld vangt spambots af.
+
+**Eenmalige setup:**
+
+1. Zet in Vercel (project > Settings > Environment Variables) `CONTACT_EMAIL` op het beheerders-e-mailadres en redeploy.
+2. Verstuur één testbericht via het formulier op de site. FormSubmit stuurt dan een activatiemail naar dat adres; klik daarin op de activatieknop. Tot die klik geeft het formulier "Versturen is niet gelukt" en komt er niets aan; daarna werkt alles.
+
+Let op: bij `npm run dev` draait de Vercel-functie niet mee, dus lokaal geeft versturen altijd de nette foutmelding. Testen doe je op de site zelf (of lokaal via `vercel dev`).
+
 ## Backend (Supabase) + automatische check in de cloud
 
 Zonder Supabase werkt de app gewoon op `src/data/matches.js`. Met Supabase verhuizen de wedstrijden naar een database, draait de check automatisch in de cloud en kun je via een admin-scherm wedstrijden bewerken zonder code aan te raken.
@@ -47,7 +58,7 @@ Zonder Supabase werkt de app gewoon op `src/data/matches.js`. Met Supabase verhu
 **Eenmalige setup:**
 
 1. Maak een gratis project op [supabase.com](https://supabase.com).
-2. Open de SQL Editor en voer `supabase/schema.sql` uit (pas eerst het beheerders-e-mailadres aan als dat afwijkt).
+2. Open de SQL Editor en voer `supabase/schema.sql` uit. Vul eerst op de drie plekken met `BEHEERDER@VOORBEELD.NL` het echte beheerders-e-mailadres in; dat staat bewust niet in git.
 3. Kopieer uit Project Settings > API de Project URL, de `anon`-sleutel en de `service_role`-sleutel.
 4. Lokaal: kopieer `.env.example` naar `.env.local` en vul de waarden in. Vul ook `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` in en draai `npm run seed` om de wedstrijden in de database te zetten.
 5. Herstart `npm run dev`. De app leest nu uit Supabase.

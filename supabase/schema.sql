@@ -1,6 +1,8 @@
 -- Geen Spoilers: databaseschema en beveiliging.
 -- Voer dit één keer uit in de Supabase SQL-editor (project > SQL Editor).
--- Pas het e-mailadres aan als de beheerder een ander adres gebruikt.
+-- Vervang eerst alle drie de keren 'BEHEERDER@VOORBEELD.NL' door het echte
+-- beheerders-e-mailadres. Dat staat bewust niet in dit bestand: de repo is
+-- openbaar en het adres hoort nergens zichtbaar te zijn.
 
 create table if not exists public.matches (
   id            text primary key,
@@ -32,10 +34,10 @@ create policy "Wedstrijden zijn openbaar leesbaar"
 drop policy if exists "Alleen beheerder mag bewerken" on public.matches;
 create policy "Alleen beheerder mag bewerken"
   on public.matches for update
-  using ((auth.jwt() ->> 'email') = 'jurrederuiter@gmail.com')
-  with check ((auth.jwt() ->> 'email') = 'jurrederuiter@gmail.com');
+  using ((auth.jwt() ->> 'email') = 'BEHEERDER@VOORBEELD.NL')
+  with check ((auth.jwt() ->> 'email') = 'BEHEERDER@VOORBEELD.NL');
 
 drop policy if exists "Alleen beheerder mag toevoegen" on public.matches;
 create policy "Alleen beheerder mag toevoegen"
   on public.matches for insert
-  with check ((auth.jwt() ->> 'email') = 'jurrederuiter@gmail.com');
+  with check ((auth.jwt() ->> 'email') = 'BEHEERDER@VOORBEELD.NL');

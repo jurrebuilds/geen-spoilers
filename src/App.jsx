@@ -5,6 +5,8 @@ import Player from './components/Player.jsx'
 
 // Het admin-scherm (met de Supabase-SDK) wordt apart geladen, alleen op #admin
 const Admin = lazy(() => import('./components/Admin.jsx'))
+// Het contactscherm laadt pas als iemand op "Contact" tikt
+const Contact = lazy(() => import('./components/Contact.jsx'))
 
 // Toont het admin-scherm op #admin, maar óók als Supabase ons na een
 // magic-link terugstuurt. Die login-tokens (of een foutmelding) komen in de
@@ -107,6 +109,8 @@ export default function App() {
   const [activeMatch, setActiveMatch] = useState(null)
   // 'open' → speler glijdt erin, 'sluiten' → glijdt eruit en wordt daarna opgeruimd
   const [playerFase, setPlayerFase] = useState('open')
+  // contactsheet: null (dicht) | 'open' | 'sluiten', zelfde patroon als de speler
+  const [contactFase, setContactFase] = useState(null)
   const [filters, setFilters] = useState({ onlyAvailable: false, oranje: false })
 
   useEffect(() => {
@@ -131,26 +135,32 @@ export default function App() {
   }
 
   const sluitPlayer = () => setPlayerFase('sluiten')
+  const sluitContact = () => setContactFase('sluiten')
 
-  // De lijst blijft gemount onder de speler: scrollpositie blijft bewaard.
-  // Zolang de speler open is, scrolt alleen de speler.
+  const overlayOpen = Boolean(activeMatch) || contactFase !== null
+
+  // De lijst blijft gemount onder de speler of het contactscherm:
+  // scrollpositie blijft bewaard. Zolang er een sheet open is, scrolt
+  // alleen die sheet.
   useEffect(() => {
-    if (!activeMatch) return
+    if (!overlayOpen) return
     const vorige = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = vorige
     }
-  }, [activeMatch])
+  }, [overlayOpen])
 
   useEffect(() => {
-    if (!activeMatch) return
+    if (!overlayOpen) return
     const onKey = (e) => {
-      if (e.key === 'Escape') sluitPlayer()
+      if (e.key !== 'Escape') return
+      if (contactFase !== null) sluitContact()
+      else sluitPlayer()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [activeMatch])
+  }, [overlayOpen, contactFase])
 
   if (isAdminRoute(route, window.location.search)) {
     return (
@@ -165,7 +175,7 @@ export default function App() {
   return (
     <div className="min-h-dvh bg-night text-cream">
       <div
-        aria-hidden={activeMatch ? true : undefined}
+        aria-hidden={overlayOpen ? true : undefined}
         className="mx-auto max-w-md pb-[92px]"
       >
         {/* Titelbalk blijft altijd in beeld; dagkoppen plakken eronder. */}
@@ -174,7 +184,7 @@ export default function App() {
           style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))' }}
         >
           <Logo />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-[23px] font-extrabold leading-none tracking-[-0.025em]">
               Geen <span className="text-oranje">Spoilers</span>
             </h1>
@@ -182,6 +192,14 @@ export default function App() {
               Kijk alle WK-wedstrijden terug zonder spoilers
             </p>
           </div>
+          {/* Bewust onopvallend: klein en gedempt, maar altijd binnen bereik */}
+          <button
+            type="button"
+            onClick={() => setContactFase('open')}
+            className="-mr-1 shrink-0 rounded-full px-2 py-2 text-[12.5px] font-semibold text-moss-mid transition-colors duration-150 hover:text-moss active:text-cream"
+          >
+            Contact
+          </button>
         </header>
 
         {matches === null ? (
@@ -211,6 +229,24 @@ export default function App() {
           }}
         >
           <Player match={activeMatch} onBack={sluitPlayer} />
+        </div>
+      )}
+
+      {contactFase !== null && (
+        <div
+          className={`fixed inset-0 z-50 overflow-y-auto bg-night ${
+            contactFase === 'sluiten' ? 'animate-sheet-out' : 'animate-sheet-in'
+          }`}
+          onAnimationEnd={(e) => {
+            // alleen de eigen sheet-animatie, niet die van kinderen
+            if (e.target === e.currentTarget && contactFase === 'sluiten') {
+              setContactFase(null)
+            }
+          }}
+        >
+          <Suspense fallback={null}>
+            <Contact onBack={sluitContact} />
+          </Suspense>
         </div>
       )}
     </div>
