@@ -11,6 +11,21 @@ export default function Admin() {
   const [sb, setSb] = useState(null)
   const [session, setSession] = useState(null)
   const [klaar, setKlaar] = useState(false)
+  // Kwam Supabase terug met een fout (bijv. een verlopen inloglink)? Dan
+  // tonen we dat boven het loginformulier. Eenmalig bij het openen uitlezen,
+  // vóór de SDK de tokens uit de URL haalt.
+  const [linkVerlopen] = useState(() =>
+    /[#&](?:error|error_code|error_description)=/.test(window.location.hash),
+  )
+
+  // Na inloggen via een magic link staan de tokens nog in de URL en is de
+  // hash geen "#admin" meer. Opschonen zodat een refresh in beheer blijft en
+  // de tokens niet in de adresbalk blijven staan.
+  useEffect(() => {
+    if (session && window.location.hash !== '#admin') {
+      window.history.replaceState(null, '', window.location.pathname + '#admin')
+    }
+  }, [session])
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -48,7 +63,7 @@ export default function Admin() {
   } else if (!klaar || !sb) {
     inhoud = <Melding>Laden…</Melding>
   } else if (!session) {
-    inhoud = <Login sb={sb} />
+    inhoud = <Login sb={sb} linkVerlopen={linkVerlopen} />
   } else {
     inhoud = <Beheer sb={sb} session={session} />
   }
@@ -78,7 +93,7 @@ function Melding({ children }) {
   )
 }
 
-function Login({ sb }) {
+function Login({ sb, linkVerlopen }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle') // idle | bezig | verstuurd | fout
 
@@ -103,6 +118,12 @@ function Login({ sb }) {
 
   return (
     <form onSubmit={verstuur} className="space-y-3">
+      {linkVerlopen && (
+        <p className="rounded-2xl border border-oranje/30 bg-oranje/10 p-4 text-sm leading-relaxed text-oranje">
+          De vorige inloglink was verlopen of al gebruikt. Vraag hieronder een
+          nieuwe aan en open hem meteen.
+        </p>
+      )}
       <p className="text-sm text-moss">
         Log in met je e-mailadres. Je krijgt een inloglink toegestuurd.
       </p>

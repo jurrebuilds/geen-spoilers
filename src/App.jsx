@@ -6,6 +6,21 @@ import Player from './components/Player.jsx'
 // Het admin-scherm (met de Supabase-SDK) wordt apart geladen, alleen op #admin
 const Admin = lazy(() => import('./components/Admin.jsx'))
 
+// Toont het admin-scherm op #admin, maar óók als Supabase ons na een
+// magic-link terugstuurt. Die login-tokens (of een foutmelding) komen in de
+// hash binnen en overschrijven dan "#admin"; zonder deze check zou de app
+// de wedstrijdlijst tonen en de sessie nooit oppikken.
+function isAdminRoute(hash, search) {
+  if (hash.startsWith('#admin')) return true
+  // implicit flow: tokens/fouten in de hash
+  if (/[#&](?:access_token|refresh_token|provider_token|error|error_code|error_description)=/.test(hash)) {
+    return true
+  }
+  // PKCE flow: code/fout in de query
+  if (/[?&](?:code|error)=/.test(search)) return true
+  return false
+}
+
 function Logo() {
   // Merkteken: oog met voetbal als pupil, zie ook public/favicon.svg
   return (
@@ -137,7 +152,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [activeMatch])
 
-  if (route === '#admin') {
+  if (isAdminRoute(route, window.location.search)) {
     return (
       <Suspense
         fallback={<div className="min-h-dvh bg-night" aria-hidden="true" />}
@@ -151,9 +166,13 @@ export default function App() {
     <div className="min-h-dvh bg-night text-cream">
       <div
         aria-hidden={activeMatch ? true : undefined}
-        className="mx-auto max-w-md pb-[92px] pt-5"
+        className="mx-auto max-w-md pb-[92px]"
       >
-        <header className="flex animate-fade-up items-center gap-3 px-[18px] pb-4 pt-2.5">
+        {/* Titelbalk blijft altijd in beeld; dagkoppen plakken eronder. */}
+        <header
+          className="sticky top-0 z-30 flex items-center gap-3 border-b border-line/40 bg-night/85 px-[18px] pb-3.5 backdrop-blur-lg"
+          style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))' }}
+        >
           <Logo />
           <div className="min-w-0">
             <h1 className="text-[23px] font-extrabold leading-none tracking-[-0.025em]">

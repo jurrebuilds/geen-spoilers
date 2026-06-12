@@ -35,7 +35,7 @@ function DayHeading({ group, today, yesterday }) {
         : group.weekday
   const n = group.matches.length
   return (
-    <div className="sticky top-0 z-10 flex items-end justify-between gap-3 bg-night/[0.92] px-[18px] pb-[9px] pt-[13px] backdrop-blur-[10px]">
+    <div className="sticky top-[79px] z-10 flex items-end justify-between gap-3 bg-night/[0.92] px-[18px] pb-[9px] pt-[13px] backdrop-blur-[10px]">
       <div className="flex items-baseline gap-2.5">
         <span
           className={`text-[11px] font-bold uppercase tracking-[0.14em] ${
@@ -207,7 +207,7 @@ export default function MatchList({ matches, onOpen, filters, onFiltersChange })
           <section
             key={group.key}
             ref={group.key === scrollKey ? todayRef : null}
-            className="scroll-mt-1"
+            className="scroll-mt-[79px]"
           >
             <DayHeading group={group} today={today} yesterday={yesterday} />
             <div className="flex flex-col gap-2 px-3.5 pb-3 pt-2">
