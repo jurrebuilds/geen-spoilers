@@ -112,28 +112,35 @@ const fromRow = (r) => ({
 // De opslag verschilt per modus, de zoeklogica eronder is identiek.
 async function maakOpslag() {
   if (DB_MODE) {
-    const { createClient } = await import('@supabase/supabase-js')
-    const db = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY,
-      { auth: { persistSession: false } },
-    )
+    // Via de REST-API i.p.v. de SDK: geen WebSocket nodig (de SDK eist die op
+    // oudere Node-versies), werkt overal. De service-sleutel omzeilt RLS.
+    const base = process.env.SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_KEY
+    const headers = { apikey: key, Authorization: `Bearer ${key}` }
     const veldNaam = { youtubeId: 'youtube_id', livestreamId: 'livestream_id' }
     return {
       async getMatches() {
-        const { data, error } = await db
-          .from('matches')
-          .select('*')
-          .order('kickoff', { ascending: true })
-        if (error) throw new Error(`Supabase: ${error.message}`)
-        return (data || []).map(fromRow)
+        const res = await fetch(
+          `${base}/rest/v1/matches?select=*&order=kickoff.asc`,
+          { headers },
+        )
+        if (!res.ok) throw new Error(`Supabase gaf ${res.status}`)
+        return (await res.json()).map(fromRow)
       },
       async vul(matchId, veld, videoId) {
-        const { error } = await db
-          .from('matches')
-          .update({ [veldNaam[veld]]: videoId, updated_at: new Date().toISOString() })
-          .eq('id', matchId)
-        return !error
+        const res = await fetch(`${base}/rest/v1/matches?id=eq.${matchId}`, {
+          method: 'PATCH',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            [veldNaam[veld]]: videoId,
+            updated_at: new Date().toISOString(),
+          }),
+        })
+        return res.ok
       },
       async klaar() {},
     }
