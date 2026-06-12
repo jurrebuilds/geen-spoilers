@@ -47,12 +47,22 @@ export default async function handler(req, res) {
         bericht,
       }),
     })
-    const data = await r.json().catch(() => ({}))
+    const tekst = await r.text()
+    let data = {}
+    try {
+      data = JSON.parse(tekst)
+    } catch {
+      // geen JSON: waarschijnlijk een blokkadepagina, zie de log
+    }
     // formsubmit antwoordt met success: "false" zolang het adres nog niet
     // geactiveerd is; geef dat als fout door zodat het opvalt
     const ok = r.ok && String(data.success) !== 'false'
+    if (!ok) {
+      console.error('formsubmit weigerde:', r.status, tekst.slice(0, 300))
+    }
     res.status(ok ? 200 : 502).json({ ok })
-  } catch {
+  } catch (err) {
+    console.error('formsubmit onbereikbaar:', err)
     res.status(502).json({ ok: false })
   }
 }
