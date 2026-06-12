@@ -1,0 +1,22 @@
+# Tijdelijke diagnose: stuurt een testbericht naar het contactformulier
+# zodat de respons en de Vercel-logs gecontroleerd kunnen worden zonder
+# telkens handmatig het formulier in te vullen. Handmatig te starten via
+# Actions > "Test contactformulier" > Run workflow.
+name: Test contactformulier
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/test-contact.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST naar Formspree
+        run: |
+          curl -s -w '\nHTTP %{http_code}\n' -X POST https://formspree.io/f/xkoapnrl \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json' \
+            -d '{"bericht":"Testbericht via GitHub Actions: controle dat het contactformulier aankomt."}'

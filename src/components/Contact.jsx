@@ -1,9 +1,11 @@
 import { useState } from 'react'
 
 // Contactscherm, bereikbaar via de kleine link in de titelbalk. Het
-// formulier post naar /api/contact (Vercel-functie), die het bericht als
-// e-mail doorstuurt. Het e-mailadres van de beheerder leeft alleen dáár,
-// als omgevingsvariabele — nooit in deze bundel.
+// formulier post rechtstreeks naar Formspree; de form-ID is publiek by
+// design en verwijst alleen naar het formulier — het e-mailadres van de
+// beheerder blijft verborgen in het Formspree-account.
+const FORMSPREE_URL = 'https://formspree.io/f/xkoapnrl'
+
 export default function Contact({ onBack }) {
   const [bericht, setBericht] = useState('')
   const [email, setEmail] = useState('')
@@ -13,15 +15,23 @@ export default function Contact({ onBack }) {
 
   const verstuur = async (e) => {
     e.preventDefault()
+    if (valstrik.trim()) {
+      // een bot: doe alsof het gelukt is, verstuur niets
+      setStatus('klaar')
+      return
+    }
     setStatus('bezig')
     try {
-      const res = await fetch('/api/contact', {
+      const res = await fetch(FORMSPREE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify({
-          message: bericht.trim(),
-          email: email.trim(),
-          website: valstrik,
+          bericht: bericht.trim(),
+          // Formspree gebruikt dit veld als reply-to van de mail
+          ...(email.trim() ? { email: email.trim() } : {}),
         }),
       })
       setStatus(res.ok ? 'klaar' : 'fout')
