@@ -42,14 +42,9 @@ Alle 104 WK-wedstrijden staan in één bestand: `src/data/matches.js` (volledig 
 
 ## Contact
 
-Rechts in de titelbalk zit een kleine "Contact"-link met een berichtformulier erachter. Het formulier post naar `api/contact.js` (een Vercel-functie), die het bericht als e-mail doorstuurt via [formsubmit.co](https://formsubmit.co) (gratis, geen account). Het e-mailadres van de beheerder staat alleen in de Vercel-omgevingsvariabele `CONTACT_EMAIL` — nergens in de frontend of in git. Een verborgen honingpotveld vangt spambots af.
+Helemaal onderaan de wedstrijdlijst staat een onopvallende "Stuur een bericht"-link met een berichtformulier erachter. Het formulier post rechtstreeks naar [Formspree](https://formspree.io) (zie `FORMSPREE_URL` in `src/components/Contact.jsx`), dat het bericht doormailt naar de beheerder. De form-ID in de code is publiek by design; het e-mailadres erachter blijft verborgen in het Formspree-account. Vult de afzender een e-mailadres in, dan wordt dat de reply-to van de mail. Een verborgen honingpotveld vangt spambots af; berichten beheren of het doeladres wijzigen doe je in het Formspree-dashboard.
 
-**Eenmalige setup:**
-
-1. Zet in Vercel (project > Settings > Environment Variables) `CONTACT_EMAIL` op het beheerders-e-mailadres en redeploy.
-2. Verstuur één testbericht via het formulier op de site. FormSubmit stuurt dan een activatiemail naar dat adres; klik daarin op de activatieknop. Tot die klik geeft het formulier "Versturen is niet gelukt" en komt er niets aan; daarna werkt alles.
-
-Let op: bij `npm run dev` draait de Vercel-functie niet mee, dus lokaal geeft versturen altijd de nette foutmelding. Testen doe je op de site zelf (of lokaal via `vercel dev`).
+Eerder liep dit via formsubmit.co achter een Vercel-functie, maar de botbescherming van formsubmit blokkeert verzoeken vanaf servers (403). Vanuit de browser posten naar Formspree heeft dat probleem niet.
 
 ## Backend (Supabase) + automatische check in de cloud
 

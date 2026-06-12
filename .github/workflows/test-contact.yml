@@ -14,8 +14,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: POST naar /api/contact
+      - name: POST naar Formspree
         run: |
-          curl -s -w '\nHTTP %{http_code}\n' -X POST https://geenspoilers.nl/api/contact \
+          curl -s -w '\nHTTP %{http_code}\n' -X POST https://formspree.io/f/xkoapnrl \
             -H 'Content-Type: application/json' \
-            -d '{"message":"Testbericht via GitHub Actions (diagnose contactformulier).","email":"","website":""}'
+            -H 'Accept: application/json' \
+            -d '{"bericht":"Testbericht via GitHub Actions: controle dat het contactformulier aankomt."}'
