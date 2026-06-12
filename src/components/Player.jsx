@@ -406,11 +406,12 @@ export default function Player({ match, onBack }) {
         </div>
       )}
 
-      {/* Videovenster: 16:9 tijdens het afspelen, anders vult het de
-          ruimte (de afdekpanelen bedekken dan toch alles). */}
+      {/* Videovenster: 16:9 zodra de video draait — ook tijdens pauze en
+          einde, anders verspringt de lay-out zichtbaar terwijl het
+          afdekpaneel nog aan het infaden is. */}
       <div
         className={`relative w-full overflow-hidden ${
-          phase === 'playing' ? 'aspect-video flex-none' : 'min-h-0 flex-1'
+          showVideo ? 'aspect-video flex-none' : 'min-h-0 flex-1'
         }`}
         style={{ backgroundColor: BG }}
       >
@@ -605,8 +606,10 @@ export default function Player({ match, onBack }) {
         </div>
       )}
 
-      {/* Eigen bediening: geen YouTube-knoppen nodig */}
-      {phase === 'playing' && (
+      {/* Eigen bediening: geen YouTube-knoppen nodig. Blijft ook tijdens
+          pauze staan (het pauzepaneel dekt hem af), zodat de lay-out niet
+          verspringt terwijl het paneel infadet. */}
+      {(phase === 'playing' || phase === 'paused') && (
         <div className="flex-none px-[18px] pt-3.5">
           {/* Tik of sleep om te scrubben; ruime tikzone rond de balk */}
           <div

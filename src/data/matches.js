@@ -10,7 +10,7 @@
 export const matches = [
   // ── Groepsfase ──────────────────────────────────────────────
   // Groep A
-  { id: 'mex-zaf', teamA: 'Mexico', teamB: 'Zuid-Afrika', flagA: '🇲🇽', flagB: '🇿🇦', kickoff: '2026-06-11T21:00:00+02:00', stage: 'Groep A', youtubeId: 'ZqzX-RTl3jo', livestreamId: 'bjKpBBOE6D8' },
+  { id: 'mex-zaf', teamA: 'Mexico', teamB: 'Zuid-Afrika', flagA: '🇲🇽', flagB: '🇿🇦', kickoff: '2026-06-11T21:00:00+02:00', stage: 'Groep A', youtubeId: 'ZqzX-RTl3jo', livestreamId: null },
   { id: 'kor-tsj', teamA: 'Zuid-Korea', teamB: 'Tsjechië', flagA: '🇰🇷', flagB: '🇨🇿', kickoff: '2026-06-12T04:00:00+02:00', stage: 'Groep A', youtubeId: '84RGrVxrRF4', livestreamId: null },
   { id: 'tsj-zaf', teamA: 'Tsjechië', teamB: 'Zuid-Afrika', flagA: '🇨🇿', flagB: '🇿🇦', kickoff: '2026-06-18T18:00:00+02:00', stage: 'Groep A', youtubeId: null, livestreamId: null },
   { id: 'mex-kor', teamA: 'Mexico', teamB: 'Zuid-Korea', flagA: '🇲🇽', flagB: '🇰🇷', kickoff: '2026-06-19T03:00:00+02:00', stage: 'Groep A', youtubeId: null, livestreamId: null },
