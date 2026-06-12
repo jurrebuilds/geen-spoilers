@@ -318,7 +318,7 @@ export default function Player({ match, onBack }) {
   const vloeiend = dragFrac == null
 
   return (
-    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col text-cream">
+    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col text-cream md:max-w-4xl">
       {/* Eigen koptekst — nooit de YouTube-titel. Boven de afdekpanelen. */}
       <header className="relative z-30 flex flex-none items-center gap-1.5 px-2 py-1.5">
         <button
