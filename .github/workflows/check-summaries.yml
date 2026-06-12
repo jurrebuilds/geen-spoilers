@@ -1,0 +1,29 @@
+name: Check samenvattingen
+
+# Draait elke 15 minuten. Vlak na een wedstrijd staat de samenvatting daardoor
+# meestal binnen een kwartier na publicatie automatisch in de app. Buiten
+# wedstrijden stopt de check vrijwel meteen (niets te doen), dus het is goedkoop.
+# Tip: maak de repo openbaar voor onbeperkte Actions-minuten.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+# Voorkom dat twee runs elkaar overlappen
+concurrency:
+  group: check-summaries
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --omit=dev
+      - run: node scripts/check-summaries.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

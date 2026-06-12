@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Designsysteem "nachtgroen": donker veldgroen, crème tekst,
+   oranje als accent. */
+@theme {
+  --color-night: #0c120e;
+  --color-pitch: #151d17;
+  --color-pitch-raised: #1a241c;
+  --color-line: #27332a;
+  --color-cream: #f4f1e6;
+  --color-moss: #8fa093;
+  --color-oranje: #ff7a1f;
+  --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background-color: #0c120e;
+  color: #f4f1e6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Zichtbare focus voor toetsenbord- en schakelbediening */
+button:focus-visible,
+[role='button']:focus-visible,
+[role='slider']:focus-visible {
+  outline: 2px solid #ff7a1f;
+  outline-offset: 2px;
+}
