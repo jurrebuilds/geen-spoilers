@@ -151,7 +151,7 @@ export default function MatchList({ matches, onOpen, filters, onFiltersChange })
 
   return (
     <div>
-      <div className="flex gap-2 px-[18px] pb-3">
+      <div className="flex gap-2 px-[18px] pb-3 pt-3.5">
         <FilterChip
           active={filters.onlyAvailable}
           label="Alleen beschikbaar"

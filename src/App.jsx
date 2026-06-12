@@ -184,7 +184,7 @@ export default function App() {
           style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))' }}
         >
           <Logo />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <h1 className="text-[23px] font-extrabold leading-none tracking-[-0.025em]">
               Geen <span className="text-oranje">Spoilers</span>
             </h1>
@@ -192,14 +192,6 @@ export default function App() {
               Kijk alle WK-wedstrijden terug zonder spoilers
             </p>
           </div>
-          {/* Bewust onopvallend: klein en gedempt, maar altijd binnen bereik */}
-          <button
-            type="button"
-            onClick={() => setContactFase('open')}
-            className="-mr-1 shrink-0 rounded-full px-2 py-2 text-[12.5px] font-semibold text-moss-mid transition-colors duration-150 hover:text-moss active:text-cream"
-          >
-            Contact
-          </button>
         </header>
 
         {matches === null ? (
@@ -212,6 +204,20 @@ export default function App() {
               filters={filters}
               onFiltersChange={setFilters}
             />
+            {/* Bewust helemaal onderaan, voorbij de finale: wie iets kwijt
+                wil kan het vinden, verder leidt het nergens af */}
+            <footer className="flex flex-col items-center gap-1.5 px-[18px] pb-3 pt-10 text-center">
+              <p className="text-[12.5px] leading-normal text-moss-mid">
+                Foutje gezien of mis je een samenvatting?
+              </p>
+              <button
+                type="button"
+                onClick={() => setContactFase('open')}
+                className="rounded-full px-3 py-1.5 text-[13px] font-bold text-moss underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-cream active:text-cream"
+              >
+                Stuur een bericht
+              </button>
+            </footer>
           </div>
         )}
       </div>
