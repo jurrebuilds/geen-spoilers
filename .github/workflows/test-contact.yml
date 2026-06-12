@@ -6,6 +6,9 @@ name: Test contactformulier
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/test-contact.yml'
 
 jobs:
   test:
