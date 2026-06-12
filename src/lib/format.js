@@ -14,6 +14,17 @@ const dayLabelFormat = new Intl.DateTimeFormat('nl-NL', {
   month: 'long',
 })
 
+const weekdayFormat = new Intl.DateTimeFormat('nl-NL', {
+  timeZone: TIME_ZONE,
+  weekday: 'long',
+})
+
+const dayMonthFormat = new Intl.DateTimeFormat('nl-NL', {
+  timeZone: TIME_ZONE,
+  day: 'numeric',
+  month: 'long',
+})
+
 const timeFormat = new Intl.DateTimeFormat('nl-NL', {
   timeZone: TIME_ZONE,
   hour: '2-digit',
@@ -29,6 +40,17 @@ export function dayKey(iso) {
 export function dayLabel(iso) {
   const label = dayLabelFormat.format(new Date(iso))
   return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+// Weekdag met hoofdletter, bijv. "Zondag"
+export function weekdayLabel(iso) {
+  const label = weekdayFormat.format(new Date(iso))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+// Dag en maand, bijv. "14 juni"
+export function dayMonthLabel(iso) {
+  return dayMonthFormat.format(new Date(iso))
 }
 
 // Aftraptijd in Nederlandse tijd, bijv. "22:00"

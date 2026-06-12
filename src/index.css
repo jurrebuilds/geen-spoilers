@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
-/* Designsysteem "nachtgroen": donker veldgroen, crème tekst,
-   oranje als accent. Geen gradients — diepte komt uit lagen,
-   hairlines en schaduw. */
+/* Designsysteem "nachtgroen", afgestemd op het Claude Design-ontwerp:
+   donker veldgroen, crème tekst, oranje als accent. Geen gradients —
+   diepte komt uit lagen, hairlines en schaduw. */
 @theme {
   --color-night: #0c120e;
-  --color-pitch: #131b15;
-  --color-pitch-raised: #1a241c;
+  --color-pitch: #141c16;
+  --color-pitch-raised: #19231b;
   --color-line: #27332a;
-  --color-line-strong: #364538;
+  --color-line-strong: #2c3a30;
   --color-cream: #f4f1e6;
   --color-moss: #8fa093;
-  --color-moss-dim: #5f6e62;
+  --color-moss-mid: #6f7d73;
+  --color-moss-soft: #7a877d;
+  --color-moss-dim: #54605a;
   --color-oranje: #ff7a1f;
+  --color-oranje-dim: #c4783f;
   --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 
   /* Zachte, dure schaduwen: groot en laag contrast i.p.v. hard en kort */
-  --shadow-float:
-    0 16px 40px -12px rgb(0 0 0 / 0.6),
-    0 3px 10px -2px rgb(0 0 0 / 0.4);
-  --shadow-glow-oranje: 0 6px 20px -6px rgb(255 122 31 / 0.45);
+  --shadow-float: 0 10px 26px -6px rgb(0 0 0 / 0.6);
+  --shadow-glow-oranje: 0 12px 30px -8px rgb(255 122 31 / 0.55);
+  --shadow-glow-oranje-soft: 0 8px 20px -8px rgb(255 122 31 / 0.5);
 
   --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
@@ -27,7 +29,9 @@
   --animate-fade-up: fade-up 0.5s var(--ease-out-soft) both;
   --animate-sheet-in: sheet-in 0.42s var(--ease-sheet) both;
   --animate-sheet-out: sheet-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
-  --animate-pulse-ring: pulse-ring 2.6s var(--ease-out-soft) infinite;
+  --animate-panel-in: panel-in 0.18s ease-out both;
+  --animate-poster-in: poster-in 0.24s ease-out both;
+  --animate-pulse-soft: pulse-soft 1.4s ease-in-out infinite;
 }
 
 @keyframes fade-up {
@@ -63,16 +67,37 @@
   }
 }
 
-/* Rustige ring achter de afspeelknop: ademt, schreeuwt niet */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(1);
-    opacity: 0.45;
-  }
-  70%,
-  100% {
-    transform: scale(1.55);
+/* Afdekpanelen in de speler verschijnen met een minieme zoom */
+@keyframes panel-in {
+  from {
     opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes poster-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Skeletblokken ademen zachtjes */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.32;
+  }
+  50% {
+    opacity: 0.66;
   }
 }
 

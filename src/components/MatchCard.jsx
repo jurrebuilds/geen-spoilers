@@ -1,108 +1,133 @@
 import { kickoffTime } from '../lib/format.js'
+import { Flag, FlagPlaceholder } from '../lib/flags.jsx'
 
-function TeamRow({ flag, name, available }) {
+function TeamRow({ name, available }) {
   const oranje = name === 'Nederland'
+  const kleur = available
+    ? oranje
+      ? 'text-oranje'
+      : 'text-cream'
+    : oranje
+      ? 'text-oranje-dim'
+      : 'text-moss'
   return (
-    <p className="flex min-w-0 items-center gap-2.5">
-      <span className="w-6 shrink-0 text-center text-xl leading-none" aria-hidden="true">
-        {flag}
-      </span>
+    <div className="flex min-w-0 items-center gap-[9px]">
+      <Flag team={name} width={26} height={19} radius={4} />
       <span
-        className={`truncate text-[15px] font-semibold leading-6 ${
-          oranje ? 'text-oranje' : available ? 'text-cream' : 'text-cream/75'
+        className={`truncate leading-none tracking-[-0.01em] ${kleur} ${
+          available ? 'text-[15.5px] font-bold' : 'text-[15px] font-semibold'
         }`}
       >
         {name}
       </span>
-    </p>
+    </div>
   )
 }
 
 export default function MatchCard({ match, onOpen }) {
   const available = Boolean(match.youtubeId || match.livestreamId)
   const placeholder = !match.teamB
+  // alleen de hele wedstrijd, geen samenvatting
+  const liveOnly = available && !match.youtubeId
 
-  return (
-    <div
-      role={available ? 'button' : undefined}
-      tabIndex={available ? 0 : undefined}
-      onClick={available ? () => onOpen(match) : undefined}
-      onKeyDown={
-        available
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onOpen(match)
-              }
-            }
-          : undefined
-      }
-      className={`group rounded-2xl border p-4 ${
-        available
-          ? 'cursor-pointer border-line-strong/70 bg-pitch-raised transition-[transform,background-color,border-color] duration-200 ease-out select-none active:scale-[0.98] active:bg-line/50'
-          : 'border-line/40 bg-pitch'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        {/* Aftraptijd: verticaal gecentreerd tussen de twee teamregels,
-            zoals in een klassieke wedstrijdlijst */}
-        <p
-          className={`w-12 shrink-0 text-base font-bold tabular-nums tracking-tight ${
-            available ? 'text-cream' : 'text-moss-dim'
-          }`}
-        >
+  // Nog niet ingevulde knock-outwedstrijd: gestippelde vlag, gedempte tekst
+  if (placeholder) {
+    return (
+      <div className="flex items-center gap-3.5 rounded-[14px] px-3.5 py-2.5">
+        <p className="w-12 shrink-0 text-base font-semibold leading-none tabular-nums text-moss-soft">
           {kickoffTime(match.kickoff)}
         </p>
-
-        <div className="min-w-0 flex-1">
-          {placeholder ? (
-            <p className="text-[15px] font-semibold leading-6 text-moss">{match.teamA}</p>
-          ) : (
-            <div className="space-y-1">
-              <TeamRow flag={match.flagA} name={match.teamA} available={available} />
-              <TeamRow flag={match.flagB} name={match.teamB} available={available} />
-            </div>
-          )}
+        <div className="flex min-w-0 flex-1 flex-col gap-[7px]">
+          <p className="truncate text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-moss-dim">
+            {match.stage}
+          </p>
+          <div className="flex items-center gap-[11px]">
+            <FlagPlaceholder />
+            <span className="text-[14.5px] font-semibold text-moss-soft">{match.teamA}</span>
+          </div>
         </div>
+      </div>
+    )
+  }
 
-        {available && (
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-oranje text-night shadow-glow-oranje transition-transform duration-200 ease-out group-active:scale-90"
+  // Gespeeld of nog komend, maar zonder video: rustige rij zonder kaart
+  if (!available) {
+    return (
+      <div className="flex items-center gap-3.5 rounded-[14px] px-3.5 py-2.5">
+        <p className="w-12 shrink-0 text-base font-semibold leading-none tabular-nums text-moss-soft">
+          {kickoffTime(match.kickoff)}
+        </p>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <p className="truncate text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-moss-dim">
+            {match.stage}
+          </p>
+          <div className="opacity-[0.78]">
+            <div className="flex flex-col gap-1.5">
+              <TeamRow name={match.teamA} available={false} />
+              <TeamRow name={match.teamB} available={false} />
+            </div>
+          </div>
+        </div>
+        <div
+          className="flex w-[34px] shrink-0 items-center justify-center"
+          title="Nog niet beschikbaar"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            className="fill-none stroke-moss-dim"
+            strokeWidth="2"
             aria-hidden="true"
           >
-            <svg viewBox="0 0 24 24" className="ml-0.5 h-4 w-4 fill-current">
-              <path d="M8 5.5v13l11-6.5z" />
-            </svg>
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="sr-only">Nog niet beschikbaar</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Terug te kijken: kaart met afspeelknop
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(match)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen(match)
+        }
+      }}
+      className="flex cursor-pointer select-none items-center gap-3.5 rounded-2xl border border-line-strong bg-pitch-raised p-[13px_14px] transition-[transform,background-color] duration-150 ease-out active:scale-[0.985] active:bg-[#1f2b22]"
+    >
+      <p className="w-12 shrink-0 text-[17px] font-bold leading-none tracking-[-0.01em] tabular-nums text-cream">
+        {kickoffTime(match.kickoff)}
+      </p>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <p className="truncate text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-moss-mid">
+          {match.stage}
+        </p>
+        <TeamRow name={match.teamA} available />
+        <TeamRow name={match.teamB} available />
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        {liveOnly && (
+          <span className="rounded-full border border-line-strong px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[0.05em] leading-none text-moss">
+            Hele wedstrijd
           </span>
         )}
+        <span
+          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-oranje"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" className="ml-0.5 fill-night">
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+        </span>
       </div>
-
-      {/* Metaregel onder de volle breedte, uitgelijnd met de teamnamen */}
-      <p className="mt-2 ml-15 flex items-center gap-1.5 text-xs leading-5">
-        {available ? (
-          <>
-            <span className="shrink-0 font-bold text-oranje">
-              {match.youtubeId ? 'Samenvatting' : 'Hele wedstrijd'}
-            </span>
-            <span className="text-moss-dim" aria-hidden="true">
-              ·
-            </span>
-            <span className="truncate font-semibold uppercase tracking-[0.1em] text-moss">
-              {match.stage}
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="truncate font-semibold uppercase tracking-[0.1em] text-moss-dim">
-              {match.stage}
-            </span>
-            <span className="text-moss-dim/70" aria-hidden="true">
-              ·
-            </span>
-            <span className="shrink-0 font-medium text-moss-dim">Nog niet beschikbaar</span>
-          </>
-        )}
-      </p>
     </div>
   )
 }
