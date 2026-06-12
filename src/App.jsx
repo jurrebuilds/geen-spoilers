@@ -9,8 +9,8 @@ const Admin = lazy(() => import('./components/Admin.jsx'))
 function Logo() {
   // Merkteken: oog met voetbal als pupil, zie ook public/favicon.svg
   return (
-    <svg viewBox="0 0 64 64" className="h-10 w-10 shrink-0" aria-hidden="true">
-      <rect width="64" height="64" rx="14" className="fill-pitch-raised" />
+    <svg viewBox="0 0 64 64" width="44" height="44" className="shrink-0" aria-hidden="true">
+      <rect width="64" height="64" rx="16" className="fill-pitch-raised" />
       {/* de bal: witte cirkel met rand; de naden beginnen ín het
           pentagoon zodat ze er naadloos uit voortvloeien */}
       <circle cx="32" cy="32" r="9" className="fill-cream" />
@@ -37,30 +37,51 @@ function Logo() {
   )
 }
 
+// Skeletblokje dat zachtjes ademt
+function Blok({ w, h, r = 4 }) {
+  return (
+    <div
+      className="animate-pulse-soft bg-line"
+      style={{ width: w, height: h, borderRadius: r }}
+    />
+  )
+}
+
 // Skelet in de vorm van de echte lijst: de app voelt direct aanwezig
 function ListSkeleton() {
   return (
-    <div className="animate-pulse" aria-hidden="true">
-      {[3, 2].map((aantal, g) => (
-        <div key={g}>
-          <div className="mt-3.5 mb-3 h-3 w-36 rounded-full bg-pitch-raised" />
-          <div className="space-y-2.5 pb-5">
-            {Array.from({ length: aantal }, (_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-2xl border border-line/40 bg-pitch p-4"
-              >
-                <div className="h-4 w-12 shrink-0 rounded bg-pitch-raised" />
-                <div className="flex-1 space-y-2.5">
-                  <div className="h-3.5 w-3/5 rounded bg-pitch-raised" />
-                  <div className="h-3.5 w-2/5 rounded bg-pitch-raised" />
-                  <div className="h-2.5 w-1/3 rounded bg-pitch-raised/60" />
-                </div>
+    <div aria-hidden="true">
+      <div className="px-[18px] pb-[9px] pt-[13px]">
+        <Blok w={118} h={21} r={6} />
+      </div>
+      <div className="flex flex-col gap-2 px-3.5 pt-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3.5 rounded-2xl bg-pitch p-[13px_14px]"
+          >
+            <div className="w-[50px] shrink-0">
+              <Blok w={38} h={16} />
+              <div className="mt-1.5">
+                <Blok w={42} h={9} r={3} />
               </div>
-            ))}
+            </div>
+            <div className="flex flex-1 flex-col gap-[9px]">
+              <div className="flex items-center gap-[9px]">
+                <Blok w={26} h={19} />
+                <Blok w={120} h={13} />
+              </div>
+              <div className="flex items-center gap-[9px]">
+                <Blok w={26} h={19} />
+                <Blok w={92} h={13} />
+              </div>
+            </div>
+            <div className="shrink-0">
+              <Blok w={38} h={38} r={999} />
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
@@ -130,16 +151,16 @@ export default function App() {
     <div className="min-h-dvh bg-night text-cream">
       <div
         aria-hidden={activeMatch ? true : undefined}
-        className="mx-auto max-w-md px-4 pb-28 pt-7"
+        className="mx-auto max-w-md pb-[92px] pt-5"
       >
-        <header className="flex animate-fade-up items-center gap-3 pb-5">
+        <header className="flex animate-fade-up items-center gap-3 px-[18px] pb-4 pt-2.5">
           <Logo />
           <div className="min-w-0">
-            <h1 className="text-[22px] font-extrabold leading-none tracking-tight">
+            <h1 className="text-[23px] font-extrabold leading-none tracking-[-0.025em]">
               Geen <span className="text-oranje">Spoilers</span>
             </h1>
-            <p className="mt-1.5 truncate text-[13px] font-medium text-moss">
-              Kijk het WK terug zonder uitslagen
+            <p className="mt-[5px] truncate text-[12.5px] font-medium leading-tight text-moss">
+              Kijk alle WK-wedstrijden terug zonder spoilers
             </p>
           </div>
         </header>
