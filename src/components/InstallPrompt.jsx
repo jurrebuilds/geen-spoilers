@@ -3,6 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 // Hoe lang we de banner wegmoffelen nadat iemand 'm wegklikt
 const WEGGEKLIKT_KEY = 'gs-install-weggeklikt'
 const WEGGEKLIKT_DAGEN = 45
+// Onthoudt dat iemand al eens langs is geweest (de banner wacht tot een
+// volgende sessie) en dat de huidige sessie die allereerste was
+const EERDER_BEZOCHT_KEY = 'gs-eerder-bezocht'
+const EERSTE_SESSIE_KEY = 'gs-eerste-sessie'
 // Even ademruimte na het laden: eerst de wedstrijden, dan pas dit
 const TOON_NA_MS = 4000
 
@@ -17,6 +21,19 @@ function recentWeggeklikt() {
   const ts = Number(localStorage.getItem(WEGGEKLIKT_KEY))
   if (!ts) return false
   return Date.now() - ts < WEGGEKLIKT_DAGEN * 24 * 60 * 60 * 1000
+}
+
+// Wie hier voor het eerst is, laten we eerst gewoon rondkijken; de banner
+// komt pas vanaf een volgende sessie. Een refresh binnen die eerste sessie
+// telt niet als nieuw bezoek (daar zorgt sessionStorage voor).
+function isEersteBezoek() {
+  if (sessionStorage.getItem(EERSTE_SESSIE_KEY)) return true
+  if (!localStorage.getItem(EERDER_BEZOCHT_KEY)) {
+    localStorage.setItem(EERDER_BEZOCHT_KEY, '1')
+    sessionStorage.setItem(EERSTE_SESSIE_KEY, '1')
+    return true
+  }
+  return false
 }
 
 function isIos() {
@@ -55,7 +72,7 @@ export default function InstallPrompt() {
   const promptEvent = useRef(null)
 
   useEffect(() => {
-    if (alGeinstalleerd() || recentWeggeklikt()) return
+    if (alGeinstalleerd() || recentWeggeklikt() || isEersteBezoek()) return
     // Alleen op aanraakschermen: op desktop slaat "startscherm" nergens op
     if (!window.matchMedia('(pointer: coarse)').matches) return
 
