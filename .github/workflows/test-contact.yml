@@ -1,0 +1,18 @@
+# Tijdelijke diagnose: stuurt een testbericht naar het contactformulier
+# zodat de respons en de Vercel-logs gecontroleerd kunnen worden zonder
+# telkens handmatig het formulier in te vullen. Handmatig te starten via
+# Actions > "Test contactformulier" > Run workflow.
+name: Test contactformulier
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST naar /api/contact
+        run: |
+          curl -s -w '\nHTTP %{http_code}\n' -X POST https://geenspoilers.nl/api/contact \
+            -H 'Content-Type: application/json' \
+            -d '{"message":"Testbericht via GitHub Actions (diagnose contactformulier).","email":"","website":""}'
