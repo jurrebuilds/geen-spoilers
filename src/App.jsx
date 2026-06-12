@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { loadMatches } from './lib/matchesData.js'
 import MatchList from './components/MatchList.jsx'
 import Player from './components/Player.jsx'
+import InstallPrompt from './components/InstallPrompt.jsx'
 
 // Het admin-scherm (met de Supabase-SDK) wordt apart geladen, alleen op #admin
 const Admin = lazy(() => import('./components/Admin.jsx'))
@@ -221,6 +222,10 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Uitnodiging om de app op het startscherm te zetten; verdwijnt
+          vanzelf onder de speler/contactsheet (lagere z-index) */}
+      <InstallPrompt />
 
       {activeMatch && (
         <div
