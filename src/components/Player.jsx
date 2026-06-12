@@ -556,6 +556,10 @@ export default function Player({ match, onBack }) {
           <p className="max-w-[250px] text-center text-[15px] leading-normal text-cream">
             Deze samenvatting kan hier niet worden afgespeeld.
           </p>
+          <p className="-mt-2 max-w-[250px] text-center text-[12.5px] leading-normal text-moss">
+            Kijk je vanuit het buitenland of met een vpn? Dan is de video
+            mogelijk niet beschikbaar.
+          </p>
           <button
             type="button"
             onClick={onBack}
@@ -653,6 +657,10 @@ export default function Player({ match, onBack }) {
         <p className="mt-2 text-[11.5px] leading-normal text-moss-mid">
           Video: NOS Sport, via YouTube. Titel, eindscherm en aanbevelingen
           verbergen we bewust.
+        </p>
+        <p className="mt-1.5 text-[11.5px] leading-normal text-moss-mid">
+          Let op: de video werkt mogelijk niet vanuit het buitenland of met een
+          vpn.
         </p>
         {actieveVideoId && (
           <p className="mt-1.5 text-[11.5px] leading-normal text-moss-mid">
