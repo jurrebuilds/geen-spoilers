@@ -60,6 +60,17 @@ Zonder Supabase werkt de app gewoon op `src/data/matches.js`. Met Supabase verhu
 
 **Admin-scherm:** open de app met `#admin` erachter (bijv. `http://localhost:5173/#admin`). Log in via een magic link op het beheerders-e-mailadres. Daarna kun je YouTube-ID's plakken en teamnamen van knock-outs invullen. De database staat alleen schrijven toe voor dat ene e-mailadres.
 
+## Onderhoud
+
+Operationele feiten die niet uit de code blijken:
+
+- **Repository**: `jurrebuilds/geen-spoilers` (publiek, zodat GitHub Actions onbeperkte minuten heeft).
+- **Supabase-project**: `dqaqdldnsbtxjryjapor` (URL `https://dqaqdldnsbtxjryjapor.supabase.co`). De `anon`-sleutel is publiek; de `service_role`-sleutel staat alleen in `.env.local` (niet in git) en als GitHub-secret `SUPABASE_SERVICE_KEY`.
+- **Sleutels op een nieuwe laptop**: `.env.local` staat niet in git. Kopieer `.env.example` en vul de vier waarden opnieuw in (uit Supabase > Project Settings > API). Zonder `.env.local` valt de app netjes terug op de lokale wedstrijdenlijst.
+- **Check handmatig draaien**: lokaal `npm run check`; in de cloud via GitHub > Actions > "Check samenvattingen" > "Run workflow".
+- **Waarom REST en niet de Supabase-SDK in het check-script**: de SDK eist een WebSocket, die op oudere Node-versies (zoals Node 20 op de GitHub-runner) ontbreekt. Het script praat daarom rechtstreeks met de REST-API. Herintroduceer de SDK daar niet.
+- **Service-sleutel roteren** (bij twijfel over lekken): Supabase > Project Settings > API > service_role "roll", daarna de nieuwe waarde in `.env.local` én in de GitHub-secret `SUPABASE_SERVICE_KEY` zetten.
+
 ## V2 (later)
 
 Automatische import van knock-outteams (let op: weten wie doorgaat is zelf een spoiler) en PWA met pushmelding "samenvatting staat klaar".
