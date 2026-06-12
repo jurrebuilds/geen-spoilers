@@ -48,46 +48,27 @@ function SkipButton({ seconds, onClick }) {
       className="flex h-11 w-11 items-center justify-center rounded-full text-cream transition-[transform,background-color] duration-150 ease-out active:scale-90 active:bg-pitch-raised"
     >
       <svg viewBox="0 0 24 24" width="27" height="27" fill="none" aria-hidden="true">
-        {terug ? (
-          <>
-            <path
-              d="M11.2 5.4 A7 7 0 1 0 18 11"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M11.6 2 L8 5.4 L11.6 8.2"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </>
-        ) : (
-          <>
-            <path
-              d="M12.8 5.4 A7 7 0 1 1 6 11"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M12.4 2 L16 5.4 L12.4 8.2"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </>
-        )}
+        {/* Boog rond middelpunt (12,13), straal 7: start bovenin het midden,
+            300° rond, opening aan de kant waar de pijlpunt heen wijst */}
+        <path
+          d={terug ? 'M12 6 A7 7 0 1 1 5.94 9.5' : 'M12 6 A7 7 0 1 0 18.06 9.5'}
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={terug ? 'M12.2 2.8 L8.7 6 L12.2 9.2' : 'M11.8 2.8 L15.3 6 L11.8 9.2'}
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         <text
           x="12"
-          y="16.6"
+          y="15.8"
           textAnchor="middle"
-          fontSize="8"
+          fontSize="7.5"
           fontWeight="800"
           fill="currentColor"
           stroke="none"
@@ -696,10 +677,6 @@ export default function Player({ match, onBack }) {
           Video: NOS Sport, via YouTube. Titel, eindscherm en aanbevelingen
           verbergen we bewust.
         </p>
-        <p className="mt-1.5 text-[11.5px] leading-normal text-moss-mid">
-          Let op: de video werkt mogelijk niet vanuit het buitenland of met een
-          vpn.
-        </p>
         {actieveVideoId && (
           <p className="mt-1.5 text-[11.5px] leading-normal text-moss-mid">
             <a
@@ -710,10 +687,14 @@ export default function Player({ match, onBack }) {
             >
               Originele video op YouTube
             </a>{' '}
-            (let op: daar zie je titels en aanbevolen video's die de uitslag
+            (pas op: daar zie je titels en aanbevolen video's die de uitslag
             kunnen verraden)
           </p>
         )}
+        <p className="mt-1.5 text-[11.5px] leading-normal text-moss-mid">
+          Let op: de video werkt mogelijk niet vanuit het buitenland of met een
+          vpn.
+        </p>
       </div>
     </div>
   )
