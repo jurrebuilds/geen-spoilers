@@ -1,11 +1,19 @@
 import { kickoffTime } from '../lib/format.js'
 
-function TeamRow({ flag, name }) {
+function TeamRow({ flag, name, available }) {
   const oranje = name === 'Nederland'
   return (
-    <p className="flex items-center gap-2 leading-snug">
-      {flag && <span className="text-lg leading-none">{flag}</span>}
-      <span className={`font-semibold ${oranje ? 'text-oranje' : ''}`}>{name}</span>
+    <p className="flex min-w-0 items-center gap-2.5">
+      <span className="w-6 shrink-0 text-center text-xl leading-none" aria-hidden="true">
+        {flag}
+      </span>
+      <span
+        className={`truncate text-[15px] font-semibold leading-6 ${
+          oranje ? 'text-oranje' : available ? 'text-cream' : 'text-cream/75'
+        }`}
+      >
+        {name}
+      </span>
     </p>
   )
 }
@@ -22,58 +30,79 @@ export default function MatchCard({ match, onOpen }) {
       onKeyDown={
         available
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onOpen(match)
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onOpen(match)
+              }
             }
           : undefined
       }
-      className={`flex gap-4 rounded-2xl border p-4 ${
+      className={`group rounded-2xl border p-4 ${
         available
-          ? 'cursor-pointer border-oranje/30 bg-pitch-raised transition-colors active:bg-line'
-          : 'border-line/60 bg-pitch'
+          ? 'cursor-pointer border-line-strong/70 bg-pitch-raised transition-[transform,background-color,border-color] duration-200 ease-out select-none active:scale-[0.98] active:bg-line/50'
+          : 'border-line/40 bg-pitch'
       }`}
     >
-      <div className="w-12 shrink-0 pt-0.5">
-        <p className={`text-lg font-bold tabular-nums ${available ? 'text-cream' : 'text-moss'}`}>
+      <div className="flex items-center gap-3">
+        {/* Aftraptijd: verticaal gecentreerd tussen de twee teamregels,
+            zoals in een klassieke wedstrijdlijst */}
+        <p
+          className={`w-12 shrink-0 text-base font-bold tabular-nums tracking-tight ${
+            available ? 'text-cream' : 'text-moss-dim'
+          }`}
+        >
           {kickoffTime(match.kickoff)}
         </p>
-      </div>
 
-      <div className="min-w-0 flex-1">
-        {placeholder ? (
-          <p className="font-semibold text-moss">{match.teamA}</p>
-        ) : (
-          <div className="space-y-1">
-            <TeamRow flag={match.flagA} name={match.teamA} />
-            <TeamRow flag={match.flagB} name={match.teamB} />
-          </div>
-        )}
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {available ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-oranje/15 px-2.5 py-1 text-xs font-semibold text-oranje">
-              <svg viewBox="0 0 24 24" className="h-3 w-3 fill-oranje">
-                <path d="M8 5.5v13l11-6.5z" />
-              </svg>
-              {match.youtubeId ? 'Samenvatting beschikbaar' : 'Hele wedstrijd beschikbaar'}
-            </span>
+        <div className="min-w-0 flex-1">
+          {placeholder ? (
+            <p className="text-[15px] font-semibold leading-6 text-moss">{match.teamA}</p>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-line/50 px-2.5 py-1 text-xs font-medium text-moss">
-              Nog niet beschikbaar
-            </span>
+            <div className="space-y-1">
+              <TeamRow flag={match.flagA} name={match.teamA} available={available} />
+              <TeamRow flag={match.flagB} name={match.teamB} available={available} />
+            </div>
           )}
-          <span className="text-xs font-medium uppercase tracking-wide text-moss/80">
-            {match.stage}
-          </span>
         </div>
+
+        {available && (
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-oranje text-night shadow-glow-oranje transition-transform duration-200 ease-out group-active:scale-90"
+            aria-hidden="true"
+          >
+            <svg viewBox="0 0 24 24" className="ml-0.5 h-4 w-4 fill-current">
+              <path d="M8 5.5v13l11-6.5z" />
+            </svg>
+          </span>
+        )}
       </div>
 
-      {available && (
-        <div className="flex items-center">
-          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-oranje" strokeWidth="2">
-            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-      )}
+      {/* Metaregel onder de volle breedte, uitgelijnd met de teamnamen */}
+      <p className="mt-2 ml-15 flex items-center gap-1.5 text-xs leading-5">
+        {available ? (
+          <>
+            <span className="shrink-0 font-bold text-oranje">
+              {match.youtubeId ? 'Samenvatting' : 'Hele wedstrijd'}
+            </span>
+            <span className="text-moss-dim" aria-hidden="true">
+              ·
+            </span>
+            <span className="truncate font-semibold uppercase tracking-[0.1em] text-moss">
+              {match.stage}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="truncate font-semibold uppercase tracking-[0.1em] text-moss-dim">
+              {match.stage}
+            </span>
+            <span className="text-moss-dim/70" aria-hidden="true">
+              ·
+            </span>
+            <span className="shrink-0 font-medium text-moss-dim">Nog niet beschikbaar</span>
+          </>
+        )}
+      </p>
     </div>
   )
 }

@@ -8,9 +8,6 @@
 // Nooit een score of uitslag opslaan. Tijden zijn Nederlandse tijd.
 
 export const matches = [
-  // Oefeninterland (laatste test voor het WK, met echte samenvatting)
-  { id: 'ned-oez', teamA: 'Nederland', teamB: 'Oezbekistan', flagA: '🇳🇱', flagB: '🇺🇿', kickoff: '2026-06-08T20:45:00+02:00', stage: 'Oefeninterland', youtubeId: 'SD8KSUrx9jA', livestreamId: null },
-
   // ── Groepsfase ──────────────────────────────────────────────
   // Groep A
   { id: 'mex-zaf', teamA: 'Mexico', teamB: 'Zuid-Afrika', flagA: '🇲🇽', flagB: '🇿🇦', kickoff: '2026-06-11T21:00:00+02:00', stage: 'Groep A', youtubeId: 'ZqzX-RTl3jo', livestreamId: 'bjKpBBOE6D8' },
