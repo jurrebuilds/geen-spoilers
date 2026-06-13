@@ -273,6 +273,26 @@ function Verrijking({ match, actieveVideoId }) {
         </div>
       </div>
 
+      {/* Opstelling bij aftrap (direct onder de bron) */}
+      {lineup && (
+        <div className="mt-5">
+          <SectieLabel>Opstelling</SectieLabel>
+          <div className="mx-1 mb-3 flex items-center gap-1.5 text-[11.5px] text-moss-mid">
+            <svg viewBox="0 0 24 24" width="13" height="13" className="flex-none stroke-oranje" fill="none" strokeWidth="1.8" aria-hidden="true">
+              <path d="M12 9v4M12 17h.01M10.3 3.9 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span>
+              Opstelling bij aftrap. Wissels tijdens de wedstrijd verbergen we —
+              dat zijn spoilers.
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <TeamOpstelling flag={match.flagA} naam={match.teamA} team={lineup.a} />
+            <TeamOpstelling flag={match.flagB} naam={match.teamB} team={lineup.b} />
+          </div>
+        </div>
+      )}
+
       {/* Aftrap: alleen de twee tijden (NL + lokaal) */}
       {toonAftrap && (
         <div className="mt-5">
@@ -304,7 +324,7 @@ function Verrijking({ match, actieveVideoId }) {
         </div>
       )}
 
-      {/* Stadion (boven de opstelling) — foto met weer-label bij aftrap */}
+      {/* Stadion (onderaan) — foto met weer-label bij aftrap */}
       {venue && (
         <div className="mt-5">
           <SectieLabel>Stadion</SectieLabel>
@@ -371,26 +391,6 @@ function Verrijking({ match, actieveVideoId }) {
           {photo && photoCredit && (
             <p className="mx-1 mt-1.5 text-[10.5px] text-moss-dim">Foto: {photoCredit}</p>
           )}
-        </div>
-      )}
-
-      {/* Opstelling bij aftrap (onder het stadion) */}
-      {lineup && (
-        <div className="mt-5">
-          <SectieLabel>Opstelling</SectieLabel>
-          <div className="mx-1 mb-3 flex items-center gap-1.5 text-[11.5px] text-moss-mid">
-            <svg viewBox="0 0 24 24" width="13" height="13" className="flex-none stroke-oranje" fill="none" strokeWidth="1.8" aria-hidden="true">
-              <path d="M12 9v4M12 17h.01M10.3 3.9 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span>
-              Opstelling bij aftrap. Wissels tijdens de wedstrijd verbergen we —
-              dat zijn spoilers.
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <TeamOpstelling flag={match.flagA} naam={match.teamA} team={lineup.a} />
-            <TeamOpstelling flag={match.flagB} naam={match.teamB} team={lineup.b} />
-          </div>
         </div>
       )}
     </div>
@@ -561,7 +561,6 @@ export default function Player({ match, onBack }) {
     source === 'samenvatting' ? match.youtubeId : match.livestreamId
 
   const bronLabel = source === 'samenvatting' ? 'Samenvatting' : 'Hele wedstrijd'
-  const dagTijd = `${dayMonthLabel(match.kickoff)}, ${kickoffTime(match.kickoff)}`
 
   // Positie van de voortgangsbalk in procenten (tijdens slepen: sleeppositie)
   const scrubPct = progress.duration
@@ -678,6 +677,11 @@ export default function Player({ match, onBack }) {
             {match.teamA}
             {match.teamB ? ` – ${match.teamB}` : ''}
           </h1>
+          <p className="mt-[3px] truncate text-[11.5px] font-semibold tabular-nums text-moss">
+            {[match.stage, dayMonthLabel(match.kickoff), kickoffTime(match.kickoff)]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
         </div>
       </header>
 
@@ -973,14 +977,11 @@ export default function Player({ match, onBack }) {
       {/* Wedstrijdinfo onder de video — al zichtbaar vóór play */}
       <Verrijking match={match} actieveVideoId={actieveVideoId} />
 
+      {/* Ondermarge incl. veilige zone (de stage/datum/tijd staat nu in de kop) */}
       <div
-        className="mt-4 flex-none px-[18px]"
+        className="flex-none"
         style={{ paddingBottom: 'calc(1.75rem + env(safe-area-inset-bottom))' }}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] tabular-nums text-moss-dim">
-          {match.stage} · {dagTijd}
-        </p>
-      </div>
+      />
     </div>
   )
 }
