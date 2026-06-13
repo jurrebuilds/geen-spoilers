@@ -1,0 +1,30 @@
+name: Verrijk wedstrijden
+
+# Elke 15 minuten: haalt voor net gespeelde wedstrijden het stadion, het weer
+# bij aftrap en de opstelling op. Write-once, dus zodra een wedstrijd verrijkt
+# is wordt hij overgeslagen zonder API-call. Zuinig met de gratis API-limiet
+# (100 requests/dag): buiten wedstrijddagen valt er niets te doen.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+# Voorkom dat twee runs elkaar overlappen
+concurrency:
+  group: enrich-matches
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --omit=dev
+      - run: node scripts/enrich-matches.mjs --stil
+        env:
+          APISPORTS_KEY: ${{ secrets.APISPORTS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
