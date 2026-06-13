@@ -17,6 +17,16 @@ export function fromRow(r) {
     stage: r.stage ?? '',
     youtubeId: r.youtube_id ?? null,
     livestreamId: r.livestream_id ?? null,
+    // Verrijking onder de video (mag ontbreken: dan tonen we die secties niet)
+    venue: r.venue ?? null,
+    city: r.city ?? null,
+    capacity: r.capacity ?? null,
+    venueTz: r.venue_tz ?? null,
+    attendance: r.attendance ?? null,
+    tempC: r.temp_c ?? null,
+    windKmh: r.wind_kmh ?? null,
+    weatherCode: r.weather_code ?? null,
+    lineup: r.lineup ?? null,
   }
 }
 
