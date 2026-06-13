@@ -67,3 +67,22 @@ export function todayKey() {
 export function yesterdayKey() {
   return dayKeyFormat.format(new Date(Date.now() - 24 * 60 * 60 * 1000))
 }
+
+// Aftraptijd in een opgegeven tijdzone (voor de lokale tijd bij het stadion)
+export function timeInZone(iso, tz) {
+  return new Intl.DateTimeFormat('nl-NL', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
+
+// Dag in een opgegeven tijdzone, bijv. "vrijdag 12 juni"
+export function dayInZone(iso, tz) {
+  return new Intl.DateTimeFormat('nl-NL', {
+    timeZone: tz,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date(iso))
+}
