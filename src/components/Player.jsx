@@ -231,14 +231,14 @@ function Verrijking({ match, actieveVideoId }) {
     <div className="px-3 pt-2">
       {/* Bron & let-op, herstyled, direct onder de video */}
       <div className="rounded-2xl border border-line bg-pitch px-4 py-3.5">
-        <div className="flex items-start gap-[11px] py-[7px]">
+        <div className="flex items-start gap-[11px]">
           <span className="flex h-[18px] flex-none items-center">
-            <svg viewBox="0 0 24 24" width="16" height="16" className="stroke-moss-mid" fill="none" strokeWidth="1.8" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-moss-mid" fill="none" strokeWidth="1.8" aria-hidden="true">
               <rect x="3" y="6" width="13" height="12" rx="2" />
               <path d="M16 10.5l5-2.5v8l-5-2.5z" strokeLinejoin="round" />
             </svg>
           </span>
-          <p className="text-[12px] leading-relaxed text-moss">
+          <p className="text-[12px] leading-[1.5] text-moss">
             Video: NOS Sport, via{' '}
             {actieveVideoId ? (
               <a
@@ -256,14 +256,14 @@ function Verrijking({ match, actieveVideoId }) {
             uitslag kunnen verraden.
           </p>
         </div>
-        <div className="flex items-start gap-[11px] border-t border-line py-[7px]">
+        <div className="mt-4 flex items-start gap-[11px]">
           <span className="flex h-[18px] flex-none items-center">
-            <svg viewBox="0 0 24 24" width="16" height="16" className="stroke-moss-mid" fill="none" strokeWidth="1.8" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-moss-mid" fill="none" strokeWidth="1.8" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
               <path d="M12 8v4.5M12 16h.01" strokeLinecap="round" />
             </svg>
           </span>
-          <p className="text-[12px] leading-relaxed text-moss">
+          <p className="text-[12px] leading-[1.5] text-moss">
             De video werkt mogelijk niet vanuit het buitenland of met&nbsp;een&nbsp;vpn.
           </p>
         </div>
