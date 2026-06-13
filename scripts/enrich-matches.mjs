@@ -57,6 +57,7 @@ const fromRow = (r) => ({
   venue: r.venue ?? null,
   temp_c: r.temp_c ?? null,
   lineup: r.lineup ?? null,
+  photo: r.photo ?? null,
 })
 
 async function maakOpslag() {
@@ -91,7 +92,7 @@ async function maakOpslag() {
   const { matches } = await import('../src/data/matches.js')
   return {
     async getMatches() {
-      return matches.map((m) => ({ ...m, venue: null, temp_c: null, lineup: null }))
+      return matches.map((m) => ({ ...m, venue: null, temp_c: null, lineup: null, photo: null }))
     },
     async update() {
       log('  (bestandsmodus: niets weggeschreven)')
@@ -120,7 +121,7 @@ async function main() {
     // Buiten het gratis API-venster (~3 dagen) toch niet meer proberen
     const teOud = kickoffMs < nu - 3 * 24 * 60 * 60 * 1000
     if (teOud && !ONLY) return false
-    const mist = !m.venue || m.temp_c == null || !m.lineup
+    const mist = !m.venue || m.temp_c == null || !m.lineup || !m.photo
     return mist
   })
 
@@ -156,6 +157,13 @@ async function main() {
         velden.capacity = venue?.capacity ?? null
         velden.venue_tz = venue?.tz ?? null
         velden.apisports_fixture_id = fx.fixture?.id ?? null
+      }
+
+      // Stadionfoto + bronvermelding (los van de naam, zodat al gevulde
+      // wedstrijden alsnog een foto krijgen)
+      if (!m.photo && venue?.photo) {
+        velden.photo = venue.photo
+        velden.photo_credit = venue.photoCredit ?? null
       }
 
       // Weer bij aftrap (write-once)
