@@ -1,11 +1,11 @@
 name: Check samenvattingen
 
-# Draait elke 15 minuten. Vlak na een wedstrijd staat de samenvatting daardoor
+# Draait elke 5 minuten. Vlak na een wedstrijd staat de samenvatting daardoor
 # meestal binnen een kwartier na publicatie automatisch in de app. Buiten
 # wedstrijden stopt de check vrijwel meteen (niets te doen), dus het is goedkoop.
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
 # Voorkom dat twee runs elkaar overlappen
