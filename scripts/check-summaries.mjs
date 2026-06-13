@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Zoekt automatisch NOS-video's voor gespeelde wedstrijden en vult ze in:
-// - samenvatting (youtubeId): titel bevat "samenvatting" + beide teamnamen
+// - samenvatting (youtubeId): NOS-samenvattingstitel (zie lijktSamenvatting)
+//   + beide teamnamen
 // - terugkijkbare livestream (livestreamId): titel bevat "live" + beide
 //   teamnamen. Pas vanaf 4 uur na de aftrap, zodat we nooit een nog lopende
 //   stream toevoegen (die zou op het live-moment starten en de stand verraden).
@@ -79,6 +80,18 @@ async function haalFeed(bron) {
     }
   }
   return entries
+}
+
+// Herkent een NOS-samenvatting aan de titel. Meestal staat het woord
+// "samenvatting" erin, maar soms vergeet NOS dat (bijv. "Verenigde Staten -
+// Paraguay | Groep D | WK2026" stond zonder dat woord online). Daarom
+// accepteren we ook het vaste NOS-metaformat "... | WK2026". Korte goal-clips
+// zijn losse zinnen zonder dat format en blijven dus buiten beeld. Een nog
+// terugkijkbare livestream ("live" in de titel) sluiten we hier uit; die heeft
+// een eigen tak verderop, want hij start op het live-moment en verraadt de stand.
+function lijktSamenvatting(titel) {
+  if (/\blive\b/.test(titel)) return false
+  return titel.includes('samenvatting') || /\|\s*wk\s?2026\b/.test(titel)
 }
 
 async function isEmbedbaar(videoId) {
@@ -208,7 +221,7 @@ async function main() {
     // 1. Samenvatting
     if (!wedstrijd.youtubeId) {
       const treffer = entries.find(
-        (e) => e.titel.includes('samenvatting') && bevatTeams(e),
+        (e) => lijktSamenvatting(e.titel) && bevatTeams(e),
       )
       if (!treffer) {
         if (!STIL) console.log(`· Nog geen samenvatting: ${naam}`)

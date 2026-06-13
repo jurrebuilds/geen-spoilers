@@ -34,7 +34,7 @@ export const matches = [
   { id: 'mar-hai', teamA: 'Marokko', teamB: 'Haïti', flagA: '🇲🇦', flagB: '🇭🇹', kickoff: '2026-06-25T00:00:00+02:00', stage: 'Groep C', youtubeId: null, livestreamId: null },
 
   // Groep D
-  { id: 'usa-par', teamA: 'Verenigde Staten', teamB: 'Paraguay', flagA: '🇺🇸', flagB: '🇵🇾', kickoff: '2026-06-13T03:00:00+02:00', stage: 'Groep D', youtubeId: null, livestreamId: null },
+  { id: 'usa-par', teamA: 'Verenigde Staten', teamB: 'Paraguay', flagA: '🇺🇸', flagB: '🇵🇾', kickoff: '2026-06-13T03:00:00+02:00', stage: 'Groep D', youtubeId: '8MOpqhfo1dE', livestreamId: null },
   { id: 'aus-tur', teamA: 'Australië', teamB: 'Turkije', flagA: '🇦🇺', flagB: '🇹🇷', kickoff: '2026-06-14T06:00:00+02:00', stage: 'Groep D', youtubeId: null, livestreamId: null },
   { id: 'usa-aus', teamA: 'Verenigde Staten', teamB: 'Australië', flagA: '🇺🇸', flagB: '🇦🇺', kickoff: '2026-06-19T21:00:00+02:00', stage: 'Groep D', youtubeId: null, livestreamId: null },
   { id: 'tur-par', teamA: 'Turkije', teamB: 'Paraguay', flagA: '🇹🇷', flagB: '🇵🇾', kickoff: '2026-06-20T06:00:00+02:00', stage: 'Groep D', youtubeId: null, livestreamId: null },
