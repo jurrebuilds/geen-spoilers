@@ -27,6 +27,8 @@ export function fromRow(r) {
     windKmh: r.wind_kmh ?? null,
     weatherCode: r.weather_code ?? null,
     lineup: r.lineup ?? null,
+    photo: r.photo ?? null,
+    photoCredit: r.photo_credit ?? null,
   }
 }
 

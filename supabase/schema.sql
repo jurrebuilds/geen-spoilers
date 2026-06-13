@@ -33,6 +33,8 @@ alter table public.matches add column if not exists wind_kmh             numeric
 alter table public.matches add column if not exists weather_code         integer; -- WMO-code; de app vertaalt naar tekst + icoon
 alter table public.matches add column if not exists lineup               jsonb;   -- bevroren opstelling bij aftrap (write-once in het script)
 alter table public.matches add column if not exists apisports_fixture_id bigint;  -- gevonden fixture, hergebruikt door de vervolgstappen
+alter table public.matches add column if not exists photo                text;    -- stadionfoto (Wikimedia Commons)
+alter table public.matches add column if not exists photo_credit         text;    -- verplichte bronvermelding bij de foto
 
 -- Beveiliging aanzetten: standaard mag niemand iets
 alter table public.matches enable row level security;

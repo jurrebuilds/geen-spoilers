@@ -211,15 +211,19 @@ function Verrijking({ match, actieveVideoId }) {
     city,
     capacity,
     venueTz,
-    attendance,
     tempC,
     windKmh,
     weatherCode,
     lineup,
+    photo,
+    photoCredit,
   } = match
 
-  const heeftTijden = Boolean(venueTz || tempC != null || capacity != null)
+  const toonAftrap = Boolean(venueTz)
   const weer = weatherLabel(weatherCode)
+  const weerTekst = [weer, windKmh != null && `wind ${Math.round(windKmh)} km/u`]
+    .filter(Boolean)
+    .join(' · ')
 
   const kaartUrl =
     venue &&
@@ -269,8 +273,8 @@ function Verrijking({ match, actieveVideoId }) {
         </div>
       </div>
 
-      {/* Aftrap: tijden, weer, capaciteit */}
-      {heeftTijden && (
+      {/* Aftrap: alleen de twee tijden (NL + lokaal) */}
+      {toonAftrap && (
         <div className="mt-5">
           <SectieLabel>Aftrap</SectieLabel>
           <div className="grid grid-cols-2 gap-2">
@@ -285,49 +289,92 @@ function Verrijking({ match, actieveVideoId }) {
               v={kickoffTime(match.kickoff)}
               sub={dayInZone(match.kickoff, 'Europe/Amsterdam')}
             />
-            {venueTz && (
-              <Chip
-                icon={chipIcon(
-                  <>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
-                  </>,
-                )}
-                k={city ? `Lokaal · ${city}` : 'Lokaal'}
-                v={timeInZone(match.kickoff, venueTz)}
-                sub={dayInZone(match.kickoff, venueTz)}
-              />
-            )}
-            {tempC != null && (
-              <Chip
-                icon={chipIcon(
-                  <path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z" strokeLinejoin="round" />,
-                )}
-                k="Temperatuur"
-                v={`${Math.round(tempC)}°C`}
-                sub={[weer, windKmh != null && `wind ${Math.round(windKmh)} km/u`]
-                  .filter(Boolean)
-                  .join(' · ')}
-              />
-            )}
-            {capacity != null && (
-              <Chip
-                icon={chipIcon(
-                  <>
-                    <path d="M16 17v-1a4 4 0 0 0-8 0v1" strokeLinecap="round" />
-                    <circle cx="12" cy="8" r="3" />
-                  </>,
-                )}
-                k={attendance != null ? 'Toeschouwers' : 'Capaciteit'}
-                v={attendance != null ? nlGetal(attendance) : nlGetal(capacity)}
-                sub={attendance != null ? `capaciteit ${nlGetal(capacity)}` : null}
-              />
-            )}
+            <Chip
+              icon={chipIcon(
+                <>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
+                </>,
+              )}
+              k={city ? `Lokaal · ${city}` : 'Lokaal'}
+              v={timeInZone(match.kickoff, venueTz)}
+              sub={dayInZone(match.kickoff, venueTz)}
+            />
           </div>
         </div>
       )}
 
-      {/* Opstelling bij aftrap (boven het stadion) */}
+      {/* Stadion (boven de opstelling) — foto met weer-label bij aftrap */}
+      {venue && (
+        <div className="mt-5">
+          <SectieLabel>Stadion</SectieLabel>
+          <div className="overflow-hidden rounded-2xl border border-line bg-pitch">
+            {photo ? (
+              <div className="relative">
+                <img
+                  src={photo}
+                  alt={venue}
+                  referrerPolicy="no-referrer"
+                  className="block h-[180px] w-full object-cover"
+                />
+                {tempC != null && (
+                  <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-night/60 px-2.5 py-1.5 text-[12px] font-bold text-cream backdrop-blur-md">
+                    <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-cream" fill="none" strokeWidth="1.7" aria-hidden="true">
+                      <circle cx="8" cy="8.5" r="3.2" />
+                      <path d="M6.5 18h9a3.5 3.5 0 0 0 .2-7 5 5 0 0 0-9.5 1.2A3.2 3.2 0 0 0 6.5 18z" strokeLinejoin="round" />
+                    </svg>
+                    {Math.round(tempC)}°C
+                    {weerTekst && <span className="font-semibold text-cream/80">· {weerTekst}</span>}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="h-[132px] bg-pitch-raised">
+                <svg viewBox="0 0 400 132" preserveAspectRatio="none" className="h-full w-full">
+                  <rect x="0" y="0" width="400" height="132" fill="#19231b" />
+                  <g stroke="#2c3a30" strokeWidth="1.5" fill="none" opacity="0.85">
+                    <rect x="14" y="12" width="372" height="108" rx="2" />
+                    <line x1="200" y1="12" x2="200" y2="120" />
+                    <circle cx="200" cy="66" r="26" />
+                    <circle cx="200" cy="66" r="1.6" fill="#2c3a30" />
+                    <rect x="14" y="36" width="46" height="60" />
+                    <rect x="14" y="52" width="20" height="28" />
+                    <rect x="340" y="36" width="46" height="60" />
+                    <rect x="366" y="52" width="20" height="28" />
+                  </g>
+                </svg>
+              </div>
+            )}
+            <div className="flex items-end justify-between gap-3 px-4 py-3.5">
+              <div className="min-w-0">
+                <div className="truncate text-[19px] font-extrabold tracking-tight">
+                  {venue}
+                </div>
+                <div className="mt-0.5 text-[12.5px] font-semibold text-moss">
+                  {[city, capacity != null && `capaciteit ${nlGetal(capacity)}`]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </div>
+              </div>
+              {kaartUrl && (
+                <a
+                  href={kaartUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-none rounded-full border border-line-strong px-3 py-1.5 text-[12px] font-bold text-oranje transition-colors active:bg-pitch-raised"
+                >
+                  Op de kaart ↗
+                </a>
+              )}
+            </div>
+          </div>
+          {photo && photoCredit && (
+            <p className="mx-1 mt-1.5 text-[10.5px] text-moss-dim">Foto: {photoCredit}</p>
+          )}
+        </div>
+      )}
+
+      {/* Opstelling bij aftrap (onder het stadion) */}
       {lineup && (
         <div className="mt-5">
           <SectieLabel>Opstelling</SectieLabel>
@@ -343,52 +390,6 @@ function Verrijking({ match, actieveVideoId }) {
           <div className="grid grid-cols-2 gap-2.5">
             <TeamOpstelling flag={match.flagA} naam={match.teamA} team={lineup.a} />
             <TeamOpstelling flag={match.flagB} naam={match.teamB} team={lineup.b} />
-          </div>
-        </div>
-      )}
-
-      {/* Stadion */}
-      {venue && (
-        <div className="mt-5">
-          <SectieLabel>Stadion</SectieLabel>
-          <div className="overflow-hidden rounded-2xl border border-line bg-pitch">
-            <div className="h-[132px] bg-pitch-raised">
-              <svg viewBox="0 0 400 132" preserveAspectRatio="none" className="h-full w-full">
-                <rect x="0" y="0" width="400" height="132" fill="#19231b" />
-                <g stroke="#2c3a30" strokeWidth="1.5" fill="none" opacity="0.85">
-                  <rect x="14" y="12" width="372" height="108" rx="2" />
-                  <line x1="200" y1="12" x2="200" y2="120" />
-                  <circle cx="200" cy="66" r="26" />
-                  <circle cx="200" cy="66" r="1.6" fill="#2c3a30" />
-                  <rect x="14" y="36" width="46" height="60" />
-                  <rect x="14" y="52" width="20" height="28" />
-                  <rect x="340" y="36" width="46" height="60" />
-                  <rect x="366" y="52" width="20" height="28" />
-                </g>
-              </svg>
-            </div>
-            <div className="flex items-end justify-between gap-3 px-4 py-3.5">
-              <div className="min-w-0">
-                <div className="truncate text-[19px] font-extrabold tracking-tight">
-                  {venue}
-                </div>
-                {city && (
-                  <div className="mt-0.5 text-[12.5px] font-semibold text-moss">
-                    {city}
-                  </div>
-                )}
-              </div>
-              {kaartUrl && (
-                <a
-                  href={kaartUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-none rounded-full border border-line-strong px-3 py-1.5 text-[12px] font-bold text-oranje transition-colors active:bg-pitch-raised"
-                >
-                  Op de kaart ↗
-                </a>
-              )}
-            </div>
           </div>
         </div>
       )}
