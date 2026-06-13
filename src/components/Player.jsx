@@ -293,7 +293,7 @@ function Verrijking({ match, actieveVideoId }) {
         </div>
       )}
 
-      {/* Aftrap: alleen de twee tijden (NL + lokaal) */}
+      {/* Aftrap: lokale tijd (links) + temperatuur (rechts) */}
       {toonAftrap && (
         <div className="mt-5">
           <SectieLabel>Aftrap</SectieLabel>
@@ -302,24 +302,23 @@ function Verrijking({ match, actieveVideoId }) {
               icon={chipIcon(
                 <>
                   <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 2" strokeLinecap="round" />
-                </>,
-              )}
-              k="Nederland"
-              v={kickoffTime(match.kickoff)}
-              sub={dayInZone(match.kickoff, 'Europe/Amsterdam')}
-            />
-            <Chip
-              icon={chipIcon(
-                <>
-                  <circle cx="12" cy="12" r="9" />
                   <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
                 </>,
               )}
-              k={city ? `Lokaal · ${city}` : 'Lokaal'}
+              k="Lokale tijd"
               v={timeInZone(match.kickoff, venueTz)}
               sub={dayInZone(match.kickoff, venueTz)}
             />
+            {tempC != null && (
+              <Chip
+                icon={chipIcon(
+                  <path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z" strokeLinejoin="round" />,
+                )}
+                k="Temperatuur"
+                v={`${Math.round(tempC)}°C`}
+                sub={weerTekst || null}
+              />
+            )}
           </div>
         </div>
       )}
@@ -330,24 +329,12 @@ function Verrijking({ match, actieveVideoId }) {
           <SectieLabel>Stadion</SectieLabel>
           <div className="overflow-hidden rounded-2xl border border-line bg-pitch">
             {photo ? (
-              <div className="relative">
-                <img
-                  src={photo}
-                  alt={venue}
-                  referrerPolicy="no-referrer"
-                  className="block h-[180px] w-full object-cover"
-                />
-                {tempC != null && (
-                  <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-night/60 px-2.5 py-1.5 text-[12px] font-bold text-cream backdrop-blur-md">
-                    <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-cream" fill="none" strokeWidth="1.7" aria-hidden="true">
-                      <circle cx="8" cy="8.5" r="3.2" />
-                      <path d="M6.5 18h9a3.5 3.5 0 0 0 .2-7 5 5 0 0 0-9.5 1.2A3.2 3.2 0 0 0 6.5 18z" strokeLinejoin="round" />
-                    </svg>
-                    {Math.round(tempC)}°C
-                    {weerTekst && <span className="font-semibold text-cream/80">· {weerTekst}</span>}
-                  </span>
-                )}
-              </div>
+              <img
+                src={photo}
+                alt={venue}
+                referrerPolicy="no-referrer"
+                className="block h-[180px] w-full object-cover"
+              />
             ) : (
               <div className="h-[132px] bg-pitch-raised">
                 <svg viewBox="0 0 400 132" preserveAspectRatio="none" className="h-full w-full">
