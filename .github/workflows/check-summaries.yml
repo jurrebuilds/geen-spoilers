@@ -1,11 +1,9 @@
 name: Check samenvattingen
 
-# Draait elke 10 minuten. Vlak na een wedstrijd staat de samenvatting daardoor
+# Wordt extern getriggerd via cron-job.org (elke 10 min); GitHub's eigen scheduler bleek onbetrouwbaar. Vlak na een wedstrijd staat de samenvatting daardoor
 # meestal binnen een kwartier na publicatie automatisch in de app. Buiten
 # wedstrijden stopt de check vrijwel meteen (niets te doen), dus het is goedkoop.
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch: {}
 
 # Voorkom dat twee runs elkaar overlappen
