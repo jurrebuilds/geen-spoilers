@@ -95,10 +95,32 @@ function lijktSamenvatting(titel) {
 }
 
 async function isEmbedbaar(videoId) {
+  // 1. Bestaat de video en is hij openbaar? oEmbed geeft 404/401 voor
+  //    verwijderde of privé video's.
   const res = await fetch(
     `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
   )
-  return res.ok
+  if (!res.ok) return false
+
+  // 2. Mág hij wel in een embed spelen? oEmbed geeft óók 200 als de uploader
+  //    embedden heeft uitgezet ("alleen op YouTube"). Zo'n video speelt op
+  //    youtube.com prima, maar geeft in onze speler error 101/150 — precies de
+  //    "kan hier niet worden afgespeeld"-melding. We checken daarom de
+  //    watch-pagina op de embed-vlag (playableInEmbed). Die staat los van regio,
+  //    dus ook de cron op een US-server leest 'm goed. Lukt het lezen niet, dan
+  //    vertrouwen we op oEmbed en blokkeren we niets.
+  try {
+    const pagina = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { 'Accept-Language': 'nl-NL,nl;q=0.9' },
+    })
+    if (!pagina.ok) return true
+    const html = await pagina.text()
+    const vlag = html.match(/"playableInEmbed":(true|false)/)
+    if (vlag) return vlag[1] === 'true'
+  } catch {
+    // netwerkhik bij de watch-pagina: oEmbed was al goed, dus toelaten
+  }
+  return true
 }
 
 // Vul een veld (youtubeId of livestreamId) in op de regel van deze wedstrijd
