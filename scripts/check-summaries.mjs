@@ -259,8 +259,25 @@ async function main() {
     console.log(
       `${toegevoegd} video('s) ingevuld${DB_MODE ? ' in Supabase' : ' in src/data/matches.js'}.`,
     )
+    // Alleen bij een echte wijziging een Vercel-rebuild aanstoten, zodat de
+    // statische SEO-pagina's de nieuwe samenvatting tonen. Geen wijziging =
+    // geen deploy (voorkomt een bouwlus elke 10 minuten).
+    await triggerDeploy()
   } else if (!STIL) {
     console.log('Niets nieuws gevonden.')
+  }
+}
+
+// Roept de Vercel Deploy Hook aan als die is ingesteld. Faalt stil: een
+// gemiste rebuild mag de cron nooit laten crashen.
+async function triggerDeploy() {
+  const url = process.env.VERCEL_DEPLOY_HOOK_URL
+  if (!url) return
+  try {
+    const res = await fetch(url, { method: 'POST' })
+    console.log(res.ok ? '↻ Vercel-rebuild aangestoten.' : `Deploy hook gaf ${res.status}.`)
+  } catch (fout) {
+    console.log(`Deploy hook overgeslagen (${fout.message}).`)
   }
 }
 

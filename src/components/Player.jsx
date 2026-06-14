@@ -332,6 +332,10 @@ function Verrijking({ match, actieveVideoId }) {
               <img
                 src={photo}
                 alt={venue}
+                width="1280"
+                height="720"
+                loading="lazy"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 className="block h-[180px] w-full object-cover"
               />
