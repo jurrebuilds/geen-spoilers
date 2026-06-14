@@ -24,6 +24,12 @@ function isAdminRoute(hash, search) {
   return false
 }
 
+// Een SEO-landingspagina linkt terug naar de app met #wedstrijd/<id>; daarmee
+// opent de juiste wedstrijd direct. Geeft het id terug, of null.
+function matchIdUitHash(hash) {
+  return hash.match(/^#wedstrijd\/([\w-]+)/)?.[1] ?? null
+}
+
 function Logo() {
   // Merkteken: oog met voetbal als pupil, zie ook public/favicon.svg
   return (
@@ -130,6 +136,19 @@ export default function App() {
     }
   }, [])
 
+  // Komt iemand binnen via #wedstrijd/<id> (vanaf een SEO-pagina of een
+  // gedeelde link), open dan die wedstrijd zodra de lijst geladen is.
+  useEffect(() => {
+    if (matches === null) return
+    const id = matchIdUitHash(route)
+    if (!id) return
+    const gevonden = matches.find((m) => m.id === id)
+    if (gevonden) {
+      setPlayerFase('open')
+      setActiveMatch(gevonden)
+    }
+  }, [route, matches])
+
   const openMatch = (match) => {
     setPlayerFase('open')
     setActiveMatch(match)
@@ -195,32 +214,42 @@ export default function App() {
           </div>
         </header>
 
-        {matches === null ? (
-          <ListSkeleton />
-        ) : (
-          <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
-            <MatchList
-              matches={matches}
-              onOpen={openMatch}
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-            {/* Bewust helemaal onderaan, voorbij de finale: wie iets kwijt
-                wil kan het vinden, verder leidt het nergens af */}
-            <footer className="flex flex-col items-center gap-1.5 px-[18px] pb-3 pt-10 text-center">
-              <p className="text-[12.5px] leading-normal text-moss-mid">
-                Foutje gezien of mis je een samenvatting?
-              </p>
-              <button
-                type="button"
-                onClick={() => setContactFase('open')}
-                className="rounded-full px-3 py-1.5 text-[13px] font-bold text-moss underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-cream active:text-cream"
-              >
-                Stuur een bericht
-              </button>
-            </footer>
-          </div>
-        )}
+        <main>
+          {matches === null ? (
+            <ListSkeleton />
+          ) : (
+            <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
+              <MatchList
+                matches={matches}
+                onOpen={openMatch}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+              {/* Bewust helemaal onderaan, voorbij de finale: wie iets kwijt
+                  wil kan het vinden, verder leidt het nergens af */}
+              <footer className="flex flex-col items-center gap-1.5 px-[18px] pb-3 pt-10 text-center">
+                <p className="text-[12.5px] leading-normal text-moss-mid">
+                  Foutje gezien of mis je een samenvatting?
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setContactFase('open')}
+                  className="rounded-full px-3 py-1.5 text-[13px] font-bold text-moss underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-cream active:text-cream"
+                >
+                  Stuur een bericht
+                </button>
+                {/* Stille ingang naar de crawlbare wedstrijdpagina's; leidt
+                    de gewone gebruiker niet af */}
+                <a
+                  href="/wedstrijden/"
+                  className="text-[12px] font-semibold text-moss-dim underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-moss"
+                >
+                  Alle wedstrijden
+                </a>
+              </footer>
+            </div>
+          )}
+        </main>
       </div>
 
       {/* Uitnodiging om de app op het startscherm te zetten; verdwijnt
