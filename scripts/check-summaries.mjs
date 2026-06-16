@@ -38,6 +38,8 @@ const ALIASSEN = {
   'Bosnië en Herzegovina': ['bosnie'],
   'Verenigde Staten': ['verenigde staten', 'amerika'],
   'DR Congo': ['congo'],
+  // NOS titelt dit als "Saudi-Arabië", de app gebruikt "Saoedi-Arabië"
+  'Saoedi-Arabië': ['saudi-arabie', 'saudi arabie'],
 }
 
 const STIL = process.argv.includes('--stil')
