@@ -299,11 +299,12 @@ async function main() {
     // video kan de stand in de titel hebben ("... (1-1)"); die slaan we over en
     // we zoeken door naar de NOS-versie.
     let zoekPool = null
-    const vindBruikbaar = async (predikaat) => {
+    const vindBruikbaar = async (predikaat, magZoeken = true) => {
       const past = (e) => bevatTeams(e) && predikaat(e)
       for (const entry of entries.filter(past)) {
         if (await haalVideoInfo(entry.videoId)) return entry
       }
+      if (!magZoeken) return null
       if (zoekPool === null) zoekPool = await zoekKandidaten(wedstrijd)
       for (const entry of zoekPool.filter(past)) {
         const info = await haalVideoInfo(entry.videoId)
@@ -329,6 +330,7 @@ async function main() {
     if (!wedstrijd.livestreamId && klaar) {
       const treffer = await vindBruikbaar(
         (e) => /\blive\b/.test(e.titel) && !e.titel.includes('samenvatting'),
+        false,
       )
       if (treffer && (await opslag.vul(wedstrijd.id, 'livestreamId', treffer.videoId))) {
         toegevoegd++
