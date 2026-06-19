@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { loadMatches } from './lib/matchesData.js'
 import {
-  pushConfigured,
   registerServiceWorker,
   currentStatus,
   gevolgdeMatches,
@@ -267,28 +266,6 @@ export default function App() {
               Kijk alle WK-wedstrijden terug zonder spoilers
             </p>
           </div>
-          {pushConfigured() && (
-            <button
-              type="button"
-              onClick={() => setMeldingenFase('open')}
-              aria-label="Meldingen"
-              className="ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-full text-moss transition-colors duration-150 hover:text-cream active:bg-pitch-raised"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="22"
-                height="22"
-                className="fill-none stroke-current"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </button>
-          )}
         </header>
 
         <main>
