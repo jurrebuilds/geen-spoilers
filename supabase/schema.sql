@@ -35,6 +35,11 @@ alter table public.matches add column if not exists apisports_fixture_id bigint;
 alter table public.matches add column if not exists photo                text;    -- stadionfoto (Wikimedia Commons)
 alter table public.matches add column if not exists photo_credit         text;    -- verplichte bronvermelding bij de foto
 
+-- Markeert dat we voor déze samenvatting al een pushmelding hebben verstuurd,
+-- zodat de cron nooit dubbel meldt. Wordt gezet door send-push.mjs.
+-- "Te melden" = youtube_id is gevuld én summary_notified_at is nog leeg.
+alter table public.matches add column if not exists summary_notified_at  timestamptz;
+
 -- Beveiliging aanzetten: standaard mag niemand iets
 alter table public.matches enable row level security;
 
@@ -56,3 +61,38 @@ drop policy if exists "Alleen beheerder mag toevoegen" on public.matches;
 create policy "Alleen beheerder mag toevoegen"
   on public.matches for insert
   with check ((auth.jwt() ->> 'email') = 'BEHEERDER@VOORBEELD.NL');
+
+-- ── Push-abonnementen (webpush) ─────────────────────────────────────────
+-- Eén rij per browser/apparaat dat meldingen wil. Bevat geen persoonsgegevens,
+-- alleen het door de browser uitgegeven push-endpoint + de versleutelsleutels.
+create table if not exists public.push_subscriptions (
+  endpoint   text primary key,            -- uniek per abonnement; voorkomt dubbele rijen
+  keys       jsonb not null,              -- { p256dh, auth } van de PushSubscription
+  created_at timestamptz not null default now()
+);
+
+alter table public.push_subscriptions enable row level security;
+
+-- Iedereen mag zich anoniem aanmelden (insert). Bestaat het endpoint al, dan
+-- werkt de frontend de rij bij via een upsert (resolution=merge-duplicates).
+drop policy if exists "Iedereen mag zich aanmelden voor meldingen" on public.push_subscriptions;
+create policy "Iedereen mag zich aanmelden voor meldingen"
+  on public.push_subscriptions for insert
+  with check (true);
+
+-- De upsert vanuit de browser kan een bestaand endpoint bijwerken.
+drop policy if exists "Eigen abonnement bijwerken" on public.push_subscriptions;
+create policy "Eigen abonnement bijwerken"
+  on public.push_subscriptions for update
+  using (true) with check (true);
+
+-- "Meldingen uitzetten" verwijdert het eigen endpoint direct. Endpoints zijn
+-- opaak en niet opvraagbaar (geen select-policy), dus dit is laag risico.
+drop policy if exists "Eigen abonnement verwijderen" on public.push_subscriptions;
+create policy "Eigen abonnement verwijderen"
+  on public.push_subscriptions for delete
+  using (true);
+
+-- BELANGRIJK: geen SELECT-policy. De anon-sleutel kan dus nooit de lijst met
+-- abonnees uitlezen. Het verzendscript (send-push.mjs) gebruikt de
+-- service-sleutel en omzeilt RLS volledig (lezen + dode endpoints opruimen).

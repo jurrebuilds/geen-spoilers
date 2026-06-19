@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { loadMatches } from './lib/matchesData.js'
+import { pushConfigured, registerServiceWorker } from './lib/push.js'
 import MatchList from './components/MatchList.jsx'
 import Player from './components/Player.jsx'
 import InstallPrompt from './components/InstallPrompt.jsx'
@@ -8,6 +9,8 @@ import InstallPrompt from './components/InstallPrompt.jsx'
 const Admin = lazy(() => import('./components/Admin.jsx'))
 // Het contactscherm laadt pas als iemand op "Contact" tikt
 const Contact = lazy(() => import('./components/Contact.jsx'))
+// De meldingen-uitleg laadt pas als iemand op de bel tikt
+const Meldingen = lazy(() => import('./components/Meldingen.jsx'))
 
 // Toont het admin-scherm op #admin, maar óók als Supabase ons na een
 // magic-link terugstuurt. Die login-tokens (of een foutmelding) komen in de
@@ -118,12 +121,21 @@ export default function App() {
   const [playerFase, setPlayerFase] = useState('open')
   // contactsheet: null (dicht) | 'open' | 'sluiten', zelfde patroon als de speler
   const [contactFase, setContactFase] = useState(null)
+  // meldingen-uitleg: zelfde sheet-patroon als contact
+  const [meldingenFase, setMeldingenFase] = useState(null)
   const [filters, setFilters] = useState({ onlyAvailable: false, oranje: false })
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash)
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  // Service worker registreren, nodig om pushmeldingen te kunnen ontvangen.
+  // Faalt stil als de browser het niet ondersteunt; verder gebeurt er niets
+  // tot iemand de meldingen daadwerkelijk aanzet.
+  useEffect(() => {
+    registerServiceWorker().catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -156,8 +168,10 @@ export default function App() {
 
   const sluitPlayer = () => setPlayerFase('sluiten')
   const sluitContact = () => setContactFase('sluiten')
+  const sluitMeldingen = () => setMeldingenFase('sluiten')
 
-  const overlayOpen = Boolean(activeMatch) || contactFase !== null
+  const overlayOpen =
+    Boolean(activeMatch) || contactFase !== null || meldingenFase !== null
 
   // De lijst blijft gemount onder de speler of het contactscherm:
   // scrollpositie blijft bewaard. Zolang er een sheet open is, scrolt
@@ -175,12 +189,13 @@ export default function App() {
     if (!overlayOpen) return
     const onKey = (e) => {
       if (e.key !== 'Escape') return
-      if (contactFase !== null) sluitContact()
+      if (meldingenFase !== null) sluitMeldingen()
+      else if (contactFase !== null) sluitContact()
       else sluitPlayer()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [overlayOpen, contactFase])
+  }, [overlayOpen, contactFase, meldingenFase])
 
   if (isAdminRoute(route, window.location.search)) {
     return (
@@ -212,6 +227,28 @@ export default function App() {
               Kijk alle WK-wedstrijden terug zonder spoilers
             </p>
           </div>
+          {pushConfigured() && (
+            <button
+              type="button"
+              onClick={() => setMeldingenFase('open')}
+              aria-label="Meldingen"
+              className="ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-full text-moss transition-colors duration-150 hover:text-cream active:bg-pitch-raised"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                className="fill-none stroke-current"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </button>
+          )}
         </header>
 
         <main>
@@ -286,6 +323,23 @@ export default function App() {
         >
           <Suspense fallback={null}>
             <Contact onBack={sluitContact} />
+          </Suspense>
+        </div>
+      )}
+
+      {meldingenFase !== null && (
+        <div
+          className={`fixed inset-0 z-50 overflow-y-auto bg-night ${
+            meldingenFase === 'sluiten' ? 'animate-sheet-out' : 'animate-sheet-in'
+          }`}
+          onAnimationEnd={(e) => {
+            if (e.target === e.currentTarget && meldingenFase === 'sluiten') {
+              setMeldingenFase(null)
+            }
+          }}
+        >
+          <Suspense fallback={null}>
+            <Meldingen onBack={sluitMeldingen} />
           </Suspense>
         </div>
       )}
