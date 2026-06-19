@@ -54,13 +54,23 @@ function isStandalone() {
   )
 }
 
+// Chrome/Edge/Firefox/Opera op iOS. Die kunnen wél een icoon op het
+// beginscherm zetten, maar Apple geeft webpush alleen aan via Safari
+// toegevoegde web-apps. Zo'n niet-Safari-app loopt dus dood; daarom sturen
+// we die gebruiker expliciet naar Safari.
+function isAndereBrowserOpIos() {
+  return isIos() && /crios|fxios|edgios|opios|opt\//i.test(navigator.userAgent)
+}
+
 // Welke toestand moet de Meldingen-pagina / een beltik tonen?
-// - unsupported-ios: iPhone in een gewoon tabblad → eerst op het beginscherm
+// - ios-andere-browser: iPhone in Chrome/Edge/… → moet via Safari
+// - unsupported-ios: iPhone in Safari, maar nog niet op het beginscherm
 // - unsupported: andere browser zonder push (zeldzaam)
 // - denied: gebruiker heeft het in de browser geblokkeerd
 // - granted: meldingen staan aan
 // - default: kan aangezet worden
 export function currentStatus() {
+  if (isAndereBrowserOpIos()) return 'ios-andere-browser'
   if (!pushSupported()) {
     if (isIos() && !isStandalone()) return 'unsupported-ios'
     return 'unsupported'
@@ -135,7 +145,12 @@ async function zorgVoorAbonnement() {
 // 'fout'       → tijdelijke hapering
 export async function volgMatch(matchId) {
   const st = currentStatus()
-  if (st === 'unsupported-ios' || st === 'unsupported') return 'ios-uitleg'
+  if (
+    st === 'ios-andere-browser' ||
+    st === 'unsupported-ios' ||
+    st === 'unsupported'
+  )
+    return 'ios-uitleg'
   if (st === 'denied') return 'geweigerd'
 
   let sub

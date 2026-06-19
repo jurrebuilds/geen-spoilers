@@ -148,7 +148,31 @@ export default function Meldingen({ onBack }) {
       </header>
 
       <div className="px-[18px] pb-16 pt-2">
-        {status === 'unsupported-ios' ? (
+        {status === 'ios-andere-browser' ? (
+          <>
+            <p className="text-[19px] font-bold leading-snug tracking-[-0.01em]">
+              Open in Safari
+            </p>
+            <p className="mt-2 text-[13.5px] leading-normal text-moss">
+              Op de iPhone werken meldingen alleen via Safari. Open
+              geenspoilers.nl in Safari en zet &lsquo;m daar op je beginscherm,
+              dan kun je wedstrijden volgen:
+            </p>
+            <div className="mt-5 flex flex-col gap-3.5">
+              <Stap nummer={1}>Open geenspoilers.nl in Safari</Stap>
+              <Stap nummer={2}>
+                Tik op de deelknop <DeelIcoon /> en kies{' '}
+                <span className="font-semibold text-cream">
+                  &lsquo;Zet op beginscherm&rsquo;
+                </span>
+              </Stap>
+              <Stap nummer={3}>
+                Open Geen Spoilers vanaf je beginscherm en tik op het belletje
+                bij een wedstrijd
+              </Stap>
+            </div>
+          </>
+        ) : status === 'unsupported-ios' ? (
           <>
             <p className="text-[19px] font-bold leading-snug tracking-[-0.01em]">
               Nog één stap op je iPhone
