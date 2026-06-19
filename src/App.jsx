@@ -1,6 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { loadMatches } from './lib/matchesData.js'
-import { pushConfigured, registerServiceWorker } from './lib/push.js'
+import {
+  pushConfigured,
+  registerServiceWorker,
+  currentStatus,
+  gevolgdeMatches,
+  volgMatch,
+  ontvolgMatch,
+  volgtMatch,
+} from './lib/push.js'
 import MatchList from './components/MatchList.jsx'
 import Player from './components/Player.jsx'
 import InstallPrompt from './components/InstallPrompt.jsx'
@@ -123,6 +131,8 @@ export default function App() {
   const [contactFase, setContactFase] = useState(null)
   // meldingen-uitleg: zelfde sheet-patroon als contact
   const [meldingenFase, setMeldingenFase] = useState(null)
+  // id's van gevolgde wedstrijden (lokaal onthouden, zie push.js)
+  const [gevolgd, setGevolgd] = useState(() => gevolgdeMatches())
   const [filters, setFilters] = useState({ onlyAvailable: false, oranje: false })
 
   useEffect(() => {
@@ -168,7 +178,32 @@ export default function App() {
 
   const sluitPlayer = () => setPlayerFase('sluiten')
   const sluitContact = () => setContactFase('sluiten')
-  const sluitMeldingen = () => setMeldingenFase('sluiten')
+  const sluitMeldingen = () => {
+    // de sheet kan 'stop alle meldingen' hebben gedaan; belletjes meeverversen
+    setGevolgd(gevolgdeMatches())
+    setMeldingenFase('sluiten')
+  }
+
+  // Bel-toggle bij een wedstrijd. Lukt het niet (iPhone zonder beginscherm of
+  // meldingen geblokkeerd)? Dan openen we de uitlegpagina i.p.v. stil te falen.
+  const toggleVolg = async (match) => {
+    const st = currentStatus()
+    if (st === 'unsupported-ios' || st === 'denied' || st === 'unsupported') {
+      setMeldingenFase('open')
+      return
+    }
+    if (volgtMatch(match.id)) {
+      await ontvolgMatch(match.id)
+    } else {
+      const uitkomst = await volgMatch(match.id)
+      if (uitkomst === 'ios-uitleg' || uitkomst === 'geweigerd') {
+        setMeldingenFase('open')
+        return
+      }
+      if (uitkomst !== 'gevolgd') return
+    }
+    setGevolgd(gevolgdeMatches())
+  }
 
   const overlayOpen =
     Boolean(activeMatch) || contactFase !== null || meldingenFase !== null
@@ -261,6 +296,8 @@ export default function App() {
                 onOpen={openMatch}
                 filters={filters}
                 onFiltersChange={setFilters}
+                gevolgd={gevolgd}
+                onToggleVolg={toggleVolg}
               />
               {/* Bewust helemaal onderaan, voorbij de finale: wie iets kwijt
                   wil kan het vinden, verder leidt het nergens af */}

@@ -24,7 +24,51 @@ function TeamRow({ name, available }) {
   )
 }
 
-export default function MatchCard({ match, onOpen }) {
+// Belletje op een wedstrijd zonder samenvatting: tik = volgen. Uit = grijze
+// omtrek, aan = oranje gevuld. Vervangt het oude "nog niet beschikbaar"-klokje:
+// wachten doe je nu actief, met een seintje zodra de samenvatting klaarstaat.
+function BelKnop({ gevolgd, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={gevolgd ? 'Stop met volgen' : 'Volg deze wedstrijd'}
+      aria-pressed={gevolgd}
+      className={`-my-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-150 active:bg-pitch ${
+        gevolgd ? 'text-oranje' : 'text-moss hover:text-cream'
+      }`}
+    >
+      {gevolgd ? (
+        <svg viewBox="0 0 24 24" width="20" height="20" className="fill-current" aria-hidden="true">
+          <path d="M12 2a6 6 0 0 0-6 6c0 6-3 8-3 8h18s-3-2-3-8a6 6 0 0 0-6-6z" />
+          <path d="M10.4 21a1.8 1.8 0 0 0 3.2 0z" />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          className="fill-none stroke-current"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+export default function MatchCard({
+  match,
+  onOpen,
+  gevolgd = false,
+  onToggleVolg,
+  isEersteWachtende = false,
+}) {
   const available = Boolean(match.youtubeId)
   const placeholder = !match.teamB
 
@@ -48,10 +92,12 @@ export default function MatchCard({ match, onOpen }) {
     )
   }
 
-  // Gespeeld of nog komend, maar zonder video: rustige rij zonder kaart
+  // Gespeeld of nog komend, maar zonder samenvatting: rustige rij met belletje
+  // om de wedstrijd te volgen. Op de eerstvolgende wachtende tonen we eenmalig
+  // een korte uitleg eronder (zolang die nog niet gevolgd wordt).
   if (!available) {
-    return (
-      <div className="flex items-center gap-3.5 rounded-[14px] px-3.5 py-2.5">
+    const rij = (
+      <div className="flex items-center gap-3.5 px-3.5 py-2.5">
         <p className="w-12 shrink-0 text-base font-semibold leading-none tabular-nums text-moss-soft">
           {kickoffTime(match.kickoff)}
         </p>
@@ -66,25 +112,38 @@ export default function MatchCard({ match, onOpen }) {
             </div>
           </div>
         </div>
-        <div
-          className="flex w-[34px] shrink-0 items-center justify-center"
-          title="Nog niet beschikbaar"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            className="fill-none stroke-moss-dim"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="sr-only">Nog niet beschikbaar</span>
-        </div>
+        <BelKnop gevolgd={gevolgd} onClick={() => onToggleVolg?.(match)} />
       </div>
     )
+
+    if (isEersteWachtende && !gevolgd) {
+      return (
+        <div className="overflow-hidden rounded-2xl border border-line-strong bg-pitch-raised">
+          {rij}
+          <div className="flex items-center gap-2.5 border-t border-line bg-pitch px-3.5 py-2.5">
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              className="shrink-0 fill-none stroke-oranje"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <p className="text-[12.5px] leading-snug text-moss">
+              Tik op de bel voor een seintje zodra de samenvatting klaarstaat —
+              spoilervrij.
+            </p>
+          </div>
+        </div>
+      )
+    }
+
+    return rij
   }
 
   // Terug te kijken: kaart met afspeelknop

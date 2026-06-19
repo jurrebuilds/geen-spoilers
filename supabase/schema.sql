@@ -96,3 +96,31 @@ create policy "Eigen abonnement verwijderen"
 -- BELANGRIJK: geen SELECT-policy. De anon-sleutel kan dus nooit de lijst met
 -- abonnees uitlezen. Het verzendscript (send-push.mjs) gebruikt de
 -- service-sleutel en omzeilt RLS volledig (lezen + dode endpoints opruimen).
+
+-- ── Gevolgde wedstrijden per apparaat ───────────────────────────────────
+-- Koppelt een push-abonnement (endpoint) aan de wedstrijden die het volgt.
+-- Eén rij per (apparaat, wedstrijd). send-push.mjs seint bij een nieuwe
+-- samenvatting alleen de volgers van díé wedstrijd.
+create table if not exists public.match_volgers (
+  endpoint   text not null references public.push_subscriptions(endpoint) on delete cascade,
+  match_id   text not null,
+  created_at timestamptz not null default now(),
+  primary key (endpoint, match_id)
+);
+
+create index if not exists match_volgers_match_idx on public.match_volgers (match_id);
+
+alter table public.match_volgers enable row level security;
+
+-- Iedereen mag anoniem een wedstrijd gaan volgen (insert) en weer ontvolgen
+-- (delete). Net als bij push_subscriptions: geen select, dus de lijst met
+-- volgers is nooit uitleesbaar met de anon-sleutel.
+drop policy if exists "Iedereen mag een wedstrijd volgen" on public.match_volgers;
+create policy "Iedereen mag een wedstrijd volgen"
+  on public.match_volgers for insert
+  with check (true);
+
+drop policy if exists "Eigen volg verwijderen" on public.match_volgers;
+create policy "Eigen volg verwijderen"
+  on public.match_volgers for delete
+  using (true);

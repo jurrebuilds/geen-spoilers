@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Stuurt spoilervrije pushmeldingen voor net-gevonden samenvattingen.
+// Stuurt spoilervrije pushmeldingen voor net-gevonden samenvattingen, maar
+// alleen aan de mensen die díé wedstrijd volgen (tabel match_volgers).
 // "Te melden" = youtube_id gevuld én summary_notified_at nog leeg. Na het sturen
-// markeren we de wedstrijd, zodat de 5-minutencron nooit dubbel meldt. Omdat we
-// op de DB-kolom afgaan (niet op een moment in check-summaries.mjs) is dit
+// markeren we de wedstrijd, zodat de cron nooit dubbel meldt. Omdat we op de
+// DB-kolom afgaan (niet op een moment in check-summaries.mjs) is dit
 // self-healing: een mislukte run wordt de volgende keer alsnog opgepakt.
 //
 // SPOILERVEILIG: de melding bevat alleen de teamnamen, nooit een uitslag of
@@ -48,11 +49,24 @@ async function main() {
     return
   }
 
-  // 2. Alle abonnementen (de service-sleutel omzeilt RLS)
-  const subsRes = await fetch(`${base}/rest/v1/push_subscriptions?select=*`, {
-    headers,
-  })
+  // 2. Alle abonnementen + volgers ophalen (service-sleutel omzeilt RLS) en in
+  //    het geheugen koppelen. Klein genoeg voor een zijproject; geen joins nodig.
+  const [subsRes, volgersRes] = await Promise.all([
+    fetch(`${base}/rest/v1/push_subscriptions?select=endpoint,keys`, { headers }),
+    fetch(`${base}/rest/v1/match_volgers?select=endpoint,match_id`, { headers }),
+  ])
   const subs = subsRes.ok ? await subsRes.json() : []
+  const volgers = volgersRes.ok ? await volgersRes.json() : []
+  const keysVan = new Map(subs.map((s) => [s.endpoint, s.keys]))
+
+  async function ruimOp(endpoint) {
+    // Verlopen/onbekend endpoint → verwijderen (cascade ruimt match_volgers op)
+    await fetch(
+      `${base}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`,
+      { method: 'DELETE', headers },
+    )
+    keysVan.delete(endpoint)
+  }
 
   for (const m of teMelden) {
     const naam = `${m.team_a} – ${m.team_b}`
@@ -63,29 +77,31 @@ async function main() {
       tag: `samenvatting-${m.id}`,
     })
 
+    // Endpoints die juist déze wedstrijd volgen (en een geldig abonnement hebben)
+    const ontvangers = volgers
+      .filter((v) => v.match_id === m.id)
+      .map((v) => v.endpoint)
+      .filter((e) => keysVan.has(e))
+
     await Promise.allSettled(
-      subs.map((s) =>
+      ontvangers.map((endpoint) =>
         webpush
-          .sendNotification({ endpoint: s.endpoint, keys: s.keys }, payload)
+          .sendNotification({ endpoint, keys: keysVan.get(endpoint) }, payload)
           .catch(async (err) => {
-            // Verlopen/onbekend abonnement → opruimen
             if (err.statusCode === 410 || err.statusCode === 404) {
-              await fetch(
-                `${base}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(s.endpoint)}`,
-                { method: 'DELETE', headers },
-              )
+              await ruimOp(endpoint)
             }
           }),
       ),
     )
 
-    // 3. Markeer als gemeld (ook bij 0 abonnees, anders blijft hij "nieuw")
+    // 3. Markeer als gemeld (ook bij 0 volgers, anders blijft hij "nieuw")
     await fetch(`${base}/rest/v1/matches?id=eq.${m.id}`, {
       method: 'PATCH',
       headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify({ summary_notified_at: new Date().toISOString() }),
     })
-    console.log(`✓ Pushmelding verstuurd: ${naam} (${subs.length} abonnees)`)
+    console.log(`✓ Pushmelding verstuurd: ${naam} (${ontvangers.length} volgers)`)
   }
 }
 

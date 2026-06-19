@@ -1,9 +1,5 @@
 import { useState } from 'react'
-import {
-  currentStatus,
-  subscribeToPush,
-  unsubscribeFromPush,
-} from '../lib/push.js'
+import { currentStatus, gevolgdeMatches, unsubscribeFromPush } from '../lib/push.js'
 
 // Bel-icoon, in dezelfde getekende stijl als de overige iconen in de app
 function BelIcoon({ size = 26 }) {
@@ -78,26 +74,50 @@ function Stap({ nummer, children }) {
   )
 }
 
+// Korte uitleg "zo werkt het", gedeeld door de default- en granted-toestand
+function ZoWerktHet() {
+  return (
+    <>
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-oranje/15">
+        <BelIcoon />
+      </div>
+      <p className="mt-4 text-[19px] font-bold leading-snug tracking-[-0.01em]">
+        Een seintje bij je wedstrijden
+      </p>
+      <p className="mt-2 text-[13.5px] leading-normal text-moss">
+        Tik op het belletje bij een wedstrijd die nog geen samenvatting heeft om
+        &lsquo;m te volgen. Je krijgt dan een seintje zodra die klaarstaat.
+      </p>
+      <div className="mt-5 flex flex-col gap-3">
+        <div className="flex items-start gap-2.5">
+          <CheckIcoon />
+          <span className="text-[13.5px] leading-normal text-cream/90">
+            Spoilervrij — alleen de teamnamen, nooit de uitslag
+          </span>
+        </div>
+        <div className="flex items-start gap-2.5">
+          <CheckIcoon />
+          <span className="text-[13.5px] leading-normal text-cream/90">
+            Rechtstreeks uit de NOS-samenvatting
+          </span>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function Meldingen({ onBack }) {
   const [status, setStatus] = useState(() => currentStatus())
+  const [aantal, setAantal] = useState(() => gevolgdeMatches().length)
   const [bezig, setBezig] = useState(false)
 
-  const zetAan = async () => {
-    setBezig(true)
-    try {
-      await subscribeToPush()
-    } finally {
-      setBezig(false)
-      setStatus(currentStatus())
-    }
-  }
-
-  const zetUit = async () => {
+  const stopAlle = async () => {
     setBezig(true)
     try {
       await unsubscribeFromPush()
     } finally {
       setBezig(false)
+      setAantal(gevolgdeMatches().length)
       setStatus(currentStatus())
     }
   }
@@ -128,35 +148,14 @@ export default function Meldingen({ onBack }) {
       </header>
 
       <div className="px-[18px] pb-16 pt-2">
-        {status === 'granted' ? (
-          <>
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-oranje/15">
-              <BelIcoon />
-            </div>
-            <p className="mt-4 text-[19px] font-bold leading-snug tracking-[-0.01em]">
-              Meldingen staan aan
-            </p>
-            <p className="mt-2 text-[13.5px] leading-normal text-moss">
-              Je krijgt een seintje zodra de samenvatting van een wedstrijd
-              klaarstaat. Voor alle wedstrijden.
-            </p>
-            <button
-              type="button"
-              onClick={zetUit}
-              disabled={bezig}
-              className="mt-6 rounded-full border border-line-strong px-5 py-[11px] text-sm font-bold text-moss transition-colors duration-150 hover:text-cream active:text-cream disabled:opacity-60"
-            >
-              {bezig ? 'Bezig…' : 'Meldingen uitzetten'}
-            </button>
-          </>
-        ) : status === 'unsupported-ios' ? (
+        {status === 'unsupported-ios' ? (
           <>
             <p className="text-[19px] font-bold leading-snug tracking-[-0.01em]">
               Nog één stap op je iPhone
             </p>
             <p className="mt-2 text-[13.5px] leading-normal text-moss">
               Op de iPhone werken meldingen alleen vanaf je beginscherm. Zet de
-              app er even op:
+              app er even op, dan kun je wedstrijden volgen:
             </p>
             <div className="mt-5 flex flex-col gap-3.5">
               <Stap nummer={1}>
@@ -172,16 +171,21 @@ export default function Meldingen({ onBack }) {
                 Open Geen Spoilers vanaf je beginscherm en kom hier terug
               </Stap>
             </div>
-            <div className="mt-6">
-              <button
-                type="button"
-                disabled
-                className="cursor-not-allowed rounded-full border border-line-strong px-6 py-3 text-sm font-bold text-moss-dim"
+            <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-line bg-pitch-raised px-3.5 py-3">
+              <svg
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                className="mt-0.5 shrink-0 fill-none stroke-moss"
+                strokeWidth="2"
+                aria-hidden="true"
               >
-                Zet meldingen aan
-              </button>
-              <p className="mt-2 text-xs text-moss-dim">
-                Beschikbaar vanaf het beginscherm
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 11v5M12 8h.01" strokeLinecap="round" />
+              </svg>
+              <p className="text-[12.5px] leading-normal text-moss">
+                Daarna kun je in de lijst op het belletje tikken om een wedstrijd
+                te volgen.
               </p>
             </div>
           </>
@@ -193,7 +197,7 @@ export default function Meldingen({ onBack }) {
             <p className="mt-2 text-[13.5px] leading-normal text-moss">
               Je browser blokkeert meldingen voor deze site. Zet ze weer aan via
               het slotje of de site-instellingen in je browser, en kom dan hier
-              terug.
+              terug om wedstrijden te volgen.
             </p>
           </>
         ) : status === 'unsupported' ? (
@@ -206,44 +210,29 @@ export default function Meldingen({ onBack }) {
               recente versie van Chrome, Edge of Safari.
             </p>
           </>
-        ) : (
+        ) : status === 'granted' && aantal > 0 ? (
           <>
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-oranje/15">
               <BelIcoon />
             </div>
             <p className="mt-4 text-[19px] font-bold leading-snug tracking-[-0.01em]">
-              Een seintje bij elke samenvatting
+              Je volgt {aantal} {aantal === 1 ? 'wedstrijd' : 'wedstrijden'}
             </p>
             <p className="mt-2 text-[13.5px] leading-normal text-moss">
-              Zodra de samenvatting van een wedstrijd online staat, krijg je een
-              melding. Voor alle wedstrijden.
+              Je krijgt een seintje zodra de samenvatting klaarstaat. Tik op het
+              belletje bij een wedstrijd om er een bij te volgen of te stoppen.
             </p>
-            <div className="mt-5 flex flex-col gap-3">
-              <div className="flex items-start gap-2.5">
-                <CheckIcoon />
-                <span className="text-[13.5px] leading-normal text-cream/90">
-                  Spoilervrij — alleen de teamnamen, nooit de uitslag
-                </span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <CheckIcoon />
-                <span className="text-[13.5px] leading-normal text-cream/90">
-                  Rechtstreeks uit de NOS-samenvatting
-                </span>
-              </div>
-            </div>
             <button
               type="button"
-              onClick={zetAan}
+              onClick={stopAlle}
               disabled={bezig}
-              className="mt-6 rounded-full bg-oranje px-6 py-3 text-sm font-bold text-night shadow-glow-oranje-soft transition-transform duration-150 active:scale-95 disabled:opacity-60"
+              className="mt-6 rounded-full border border-line-strong px-5 py-[11px] text-sm font-bold text-moss transition-colors duration-150 hover:text-cream active:text-cream disabled:opacity-60"
             >
-              {bezig ? 'Aanzetten…' : 'Zet meldingen aan'}
+              {bezig ? 'Bezig…' : 'Stop alle meldingen'}
             </button>
-            <p className="mt-2.5 text-xs text-moss-mid">
-              Je kunt dit altijd weer uitzetten.
-            </p>
           </>
+        ) : (
+          <ZoWerktHet />
         )}
       </div>
     </div>
