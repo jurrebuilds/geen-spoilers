@@ -51,9 +51,30 @@ function isStandalone() {
   )
 }
 
-// Eén keer per app-start: legt vast of iemand als app of in de browser binnenkomt.
+// Hoe komt iemand binnen? Zelfde route-logica als App.jsx:
+// - 'wedstrijd-deeplink': direct in een wedstrijd via #wedstrijd/<id>
+//   (vanaf een SEO-pagina of gedeelde link) — die ziet de overzichtslijst niet
+// - 'admin': het admin-scherm of een magic-link-terugkeer (tokens in hash/query)
+// - 'overzicht': de gewone landing op de wedstrijdlijst
+// Hiermee kun je de funnel 'overzicht → wedstrijd_geopend' zuiver filteren.
+function entryPoint() {
+  if (typeof window === 'undefined') return 'overzicht'
+  const { hash, search } = window.location
+  if (
+    hash.startsWith('#admin') ||
+    /[#&](?:access_token|refresh_token|provider_token|error|error_code|error_description)=/.test(hash) ||
+    /[?&](?:code|error)=/.test(search)
+  ) {
+    return 'admin'
+  }
+  if (/^#wedstrijd\/[\w-]+/.test(hash)) return 'wedstrijd-deeplink'
+  return 'overzicht'
+}
+
+// Eén keer per app-start: legt vast of iemand als app of in de browser binnenkomt,
+// en via welke ingang (overzicht, deep-link of admin).
 export function trackAppOpen() {
-  track('app_geopend', { standalone: isStandalone() })
+  track('app_geopend', { standalone: isStandalone(), entry: entryPoint() })
 }
 
 // Veilige event-helper: no-op zonder key, buffert tot posthog geladen is.
