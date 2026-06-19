@@ -8,6 +8,7 @@ import {
   ontvolgMatch,
   volgtMatch,
 } from './lib/push.js'
+import { track } from './lib/analytics.js'
 import MatchList from './components/MatchList.jsx'
 import Player from './components/Player.jsx'
 import InstallPrompt from './components/InstallPrompt.jsx'
@@ -170,7 +171,15 @@ export default function App() {
     }
   }, [route, matches])
 
+  // Compacte, spoilervrije event-props: nooit een uitslag, alleen wie en welke ronde.
+  const matchProps = (match) => ({
+    match_id: match.id,
+    teams: `${match.teamA} - ${match.teamB}`,
+    stage: match.stage || null,
+  })
+
   const openMatch = (match) => {
+    track('wedstrijd_geopend', matchProps(match))
     setPlayerFase('open')
     setActiveMatch(match)
   }
@@ -193,18 +202,22 @@ export default function App() {
       st === 'denied' ||
       st === 'unsupported'
     ) {
+      track('meldingen_geopend', { bron: 'bel' })
       setMeldingenFase('open')
       return
     }
     if (volgtMatch(match.id)) {
       await ontvolgMatch(match.id)
+      track('wedstrijd_ontvolgd', matchProps(match))
     } else {
       const uitkomst = await volgMatch(match.id)
       if (uitkomst === 'ios-uitleg' || uitkomst === 'geweigerd') {
+        track('meldingen_geopend', { bron: 'bel' })
         setMeldingenFase('open')
         return
       }
       if (uitkomst !== 'gevolgd') return
+      track('wedstrijd_gevolgd', matchProps(match))
     }
     setGevolgd(gevolgdeMatches())
   }
@@ -286,7 +299,10 @@ export default function App() {
               <footer className="mt-10 flex flex-col items-center gap-4 border-t border-line/60 px-[18px] pb-3 pt-7 text-center">
                 <button
                   type="button"
-                  onClick={() => setMeldingenFase('open')}
+                  onClick={() => {
+                    track('meldingen_geopend', { bron: 'footer' })
+                    setMeldingenFase('open')
+                  }}
                   className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream active:text-cream"
                 >
                   <svg viewBox="0 0 24 24" width="17" height="17" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -298,6 +314,7 @@ export default function App() {
                 {/* Stille ingang naar de crawlbare wedstrijdpagina's */}
                 <a
                   href="/wedstrijden/"
+                  onClick={() => track('alle_wedstrijden_geklikt')}
                   className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream"
                 >
                   <svg viewBox="0 0 24 24" width="17" height="17" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -308,7 +325,10 @@ export default function App() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => setContactFase('open')}
+                  onClick={() => {
+                    track('contact_geopend')
+                    setContactFase('open')
+                  }}
                   className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream active:text-cream"
                 >
                   <svg viewBox="0 0 24 24" width="17" height="17" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
