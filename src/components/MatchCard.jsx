@@ -135,8 +135,8 @@ export default function MatchCard({
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             <p className="text-[12.5px] leading-snug text-moss">
-              Tik op de bel voor een seintje zodra de samenvatting klaarstaat —
-              spoilervrij.
+              Tik op de bel en krijg een seintje zodra de samenvatting
+              klaarstaat
             </p>
           </div>
         </div>
