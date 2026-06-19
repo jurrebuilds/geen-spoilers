@@ -135,12 +135,15 @@ async function zorgVoorAbonnement() {
   }
 
   const json = sub.toJSON() // { endpoint, keys: { p256dh, auth } }
+  // Bewust een gewone insert (geen upsert): RLS blokkeert ON CONFLICT. Bestaat
+  // het endpoint al (409), dan zijn we al geabonneerd — ook goed. De sleutels
+  // van een endpoint zijn stabiel, dus bijwerken is niet nodig.
   const res = await fetch(SUBS_URL, {
     method: 'POST',
-    headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    headers: { ...headers, Prefer: 'return=minimal' },
     body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
   })
-  return res.ok ? sub : null
+  return res.ok || res.status === 409 ? sub : null
 }
 
 // Volg een wedstrijd. Returns:
@@ -167,12 +170,13 @@ export async function volgMatch(matchId) {
   if (!sub) return 'geweigerd'
 
   const { endpoint } = sub.toJSON()
+  // Gewone insert (geen upsert): 409 = volg je al, ook prima.
   const res = await fetch(VOLGERS_URL, {
     method: 'POST',
-    headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    headers: { ...headers, Prefer: 'return=minimal' },
     body: JSON.stringify({ endpoint, match_id: matchId }),
   })
-  if (!res.ok) return 'fout'
+  if (!res.ok && res.status !== 409) return 'fout'
   bewaarGevolgd([...gevolgdeMatches(), matchId])
   return 'gevolgd'
 }
