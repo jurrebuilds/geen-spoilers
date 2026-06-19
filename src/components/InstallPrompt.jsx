@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { track } from '../lib/analytics.js'
 
 // Hoe lang we de banner wegmoffelen nadat iemand 'm wegklikt
 const WEGGEKLIKT_KEY = 'gs-install-weggeklikt'
@@ -80,13 +81,19 @@ export default function InstallPrompt() {
 
     if (isIos()) {
       // Apple kent geen installatie-event; we kunnen alleen uitleggen hoe het moet
-      timer = setTimeout(() => setVariant('ios'), TOON_NA_MS)
+      timer = setTimeout(() => {
+        track('install_prompt_getoond', { variant: 'ios' })
+        setVariant('ios')
+      }, TOON_NA_MS)
     } else {
       // Chrome/Android meldt zich pas als de site installeerbaar is
       const onPrompt = (e) => {
         e.preventDefault()
         promptEvent.current = e
-        timer = setTimeout(() => setVariant('android'), TOON_NA_MS)
+        timer = setTimeout(() => {
+          track('install_prompt_getoond', { variant: 'android' })
+          setVariant('android')
+        }, TOON_NA_MS)
       }
       window.addEventListener('beforeinstallprompt', onPrompt)
       return () => {
@@ -99,6 +106,7 @@ export default function InstallPrompt() {
   }, [])
 
   const sluit = () => {
+    track('install_prompt_weggeklikt', { variant })
     localStorage.setItem(WEGGEKLIKT_KEY, String(Date.now()))
     setVariant(null)
   }
@@ -106,8 +114,11 @@ export default function InstallPrompt() {
   const installeer = async () => {
     const e = promptEvent.current
     if (!e) return
+    track('install_prompt_toevoegen')
     e.prompt()
     const { outcome } = await e.userChoice
+    // accepted = toegevoegd, dismissed = alsnog geweigerd in de browser-dialoog
+    track('install_prompt_resultaat', { outcome })
     // Zowel bij installeren als weigeren zijn we klaar; bij weigeren
     // vragen we het pas over een tijdje opnieuw
     if (outcome !== 'accepted') {

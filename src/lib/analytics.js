@@ -39,6 +39,23 @@ export function initAnalytics() {
 // Acties kunnen al gebeuren voordat posthog klaar met laden is; die bufferen we.
 const wachtrij = []
 
+// Draait de app als geïnstalleerde app (op het beginscherm) of in de browser?
+// Op iOS is dit onze enige proxy voor "heeft toegevoegd aan beginscherm",
+// want Apple geeft geen installatie-event.
+function isStandalone() {
+  if (typeof window === 'undefined') return false
+  return (
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    false
+  )
+}
+
+// Eén keer per app-start: legt vast of iemand als app of in de browser binnenkomt.
+export function trackAppOpen() {
+  track('app_geopend', { standalone: isStandalone() })
+}
+
 // Veilige event-helper: no-op zonder key, buffert tot posthog geladen is.
 export function track(event, props) {
   if (!KEY) return
