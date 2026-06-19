@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadYouTubeAPI } from '../lib/youtube.js'
+import { track } from '../lib/analytics.js'
 import {
   dayMonthLabel,
   kickoffTime,
@@ -485,6 +486,13 @@ export default function Player({ match, onBack }) {
       setPhase('error')
       return
     }
+    // De tik op play: precies één keer per geopende wedstrijd (de poster-knop
+    // verdwijnt hierna). Spoilervrij: alleen wie en welke ronde, nooit een uitslag.
+    track('video_gestart', {
+      match_id: match.id,
+      teams: `${match.teamA} - ${match.teamB}`,
+      stage: match.stage || null,
+    })
     setPhase('loading')
     if (readyRef.current && playerRef.current) {
       // synchroon binnen de tik: alleen zo staat mobiel geluid toe
