@@ -55,7 +55,14 @@ function DayHeading({ group, today, yesterday }) {
   )
 }
 
-export default function MatchList({ matches, onOpen, filters, onFiltersChange }) {
+export default function MatchList({
+  matches,
+  onOpen,
+  filters,
+  onFiltersChange,
+  gevolgd = [],
+  onToggleVolg,
+}) {
   const todayRef = useRef(null)
   const didScroll = useRef(false)
   // toon de zwevende knop zodra de sectie van vandaag uit beeld is
@@ -105,6 +112,16 @@ export default function MatchList({ matches, onOpen, filters, onFiltersChange })
       if (group.key <= today) scrollKey = group.key
     }
   }
+
+  // De inline uitlegkaart tonen we eenmalig op de eerstvolgende wedstrijd die
+  // op zijn samenvatting wacht: bij voorkeur de oudste al-gespeelde zonder
+  // samenvatting; is die er niet, dan de eerstvolgende komende wedstrijd.
+  const nu = Date.now()
+  const eersteWachtende =
+    visible.find(
+      (m) => m.teamB && !m.youtubeId && new Date(m.kickoff).getTime() < nu,
+    ) || visible.find((m) => m.teamB && !m.youtubeId)
+  const eersteWachtendeId = eersteWachtende?.id ?? null
 
   useEffect(() => {
     // anders zet de browser na een refresh de oude scrollpositie terug
@@ -212,7 +229,14 @@ export default function MatchList({ matches, onOpen, filters, onFiltersChange })
             <DayHeading group={group} today={today} yesterday={yesterday} />
             <div className="flex flex-col gap-2 px-3.5 pb-3 pt-2">
               {group.matches.map((match) => (
-                <MatchCard key={match.id} match={match} onOpen={onOpen} />
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  onOpen={onOpen}
+                  gevolgd={gevolgd.includes(match.id)}
+                  onToggleVolg={onToggleVolg}
+                  isEersteWachtende={match.id === eersteWachtendeId}
+                />
               ))}
             </div>
           </section>
