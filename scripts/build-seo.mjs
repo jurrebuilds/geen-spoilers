@@ -210,6 +210,33 @@ function feiten(rows) {
   return `<dl class="mt-6 overflow-hidden rounded-2xl border border-line bg-pitch">${items}</dl>`
 }
 
+// Veelgestelde vragen: één bron voor zowel de zichtbare HTML als de FAQPage-
+// JSON-LD, zodat de antwoordteksten exact gelijk zijn (vereiste van Google).
+// <details>/<summary> is native en heeft geen JS nodig. items: [{ q, a }].
+function faqBlock(items) {
+  if (!items.length) return { html: '', ld: null }
+  const html =
+    `<h2 class="mt-9 text-[15px] font-bold uppercase tracking-[0.14em] text-moss-soft">Veelgestelde vragen</h2>` +
+    `<div class="mt-3 flex flex-col gap-2">` +
+    items
+      .map(
+        ({ q, a }) =>
+          `<details class="rounded-2xl border border-line bg-pitch px-4 py-3"><summary class="cursor-pointer text-[14px] font-bold text-cream">${esc(q)}</summary><p class="mt-2 text-[13.5px] leading-relaxed text-moss">${esc(a)}</p></details>`,
+      )
+      .join('') +
+    `</div>`
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  }
+  return { html, ld }
+}
+
 // Een aanklikbare wedstrijdregel voor lijst-/overzichtspagina's
 function matchRegel(m) {
   const titel = heeftTeams(m) ? `${m.teamA} – ${m.teamB}` : `${m.stage}`
@@ -259,6 +286,9 @@ function matchPage(m, matches) {
 
   const body = []
   body.push(
+    `<p class="mt-6 text-[14px] leading-relaxed text-moss">Bekijk ${esc(naam)} uit de ${esc(m.stage)} van het WK 2026 rustig terug${m.venue ? `, gespeeld in ${esc(m.venue)}` : ''}, zonder de uitslag al te kennen. Geen Spoilers verbergt scores en verklappende titels, zodat je de samenvatting kunt kijken alsof de wedstrijd nog moet beginnen.</p>`,
+  )
+  body.push(
     feiten([
       ['Wanneer', `${dayLabel(m.kickoff)} · ${kickoffTime(m.kickoff)}`],
       ['Toernooi', `${m.stage} · WK 2026`],
@@ -290,6 +320,24 @@ function matchPage(m, matches) {
     `<p class="mt-9 text-[13px] leading-relaxed text-moss">Meer terugkijken: ${verwant.join(' · ')}</p>`,
   )
 
+  const { html: faqHtml, ld: faqLd } = faqBlock([
+    {
+      q: `Kan ik ${naam} terugkijken zonder de uitslag te zien?`,
+      a: `Ja. Je bekijkt de samenvatting van ${naam} spoilervrij — zonder score, eindstand of verklappende titel.`,
+    },
+    {
+      q: `Wanneer werd ${naam} gespeeld?`,
+      a: `${dayLabel(m.kickoff)} om ${kickoffTime(m.kickoff)}${m.venue ? `, in ${m.venue}` : ''}, in de ${m.stage} van het WK 2026.`,
+    },
+    {
+      q: `Is de samenvatting van ${naam} al beschikbaar?`,
+      a: m.youtubeId
+        ? `Ja, de samenvatting staat klaar en is hier spoilervrij terug te kijken.`
+        : `Nog niet; zodra NOS Sport de samenvatting plaatst verschijnt die hier vanzelf, spoilervrij.`,
+    },
+  ])
+  body.push(faqHtml)
+
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
@@ -312,7 +360,7 @@ function matchPage(m, matches) {
     description: `Kijk ${naam} (${m.stage}, WK 2026) spoilervrij terug${m.venue ? ` uit ${m.venue}` : ''}. Geen uitslag, geen titel — alleen de samenvatting.`,
     path: matchPath(m),
     breadcrumb,
-    jsonLd: [ld],
+    jsonLd: faqLd ? [ld, faqLd] : [ld],
     heading: naam,
     lead: `${m.stage} · ${dayLabel(m.kickoff)} · ${kickoffTime(m.kickoff)}`,
     bodyHtml: body.join('\n'),
@@ -332,7 +380,9 @@ function teamPage(naam, list) {
     ],
     heading: `${naam} op het WK 2026`,
     lead: `${list.length} ${list.length === 1 ? 'wedstrijd' : 'wedstrijden'}${groepen.length ? ` · ${groepen.join(', ')}` : ''}`,
-    bodyHtml: matchLijst(list),
+    bodyHtml:
+      `<p class="mt-6 text-[14px] leading-relaxed text-moss">Volg ${esc(naam)} op het WK 2026 en kijk elke wedstrijd spoilervrij terug. Geen Spoilers houdt scores en verklappende titels uit beeld, zodat je de samenvatting kunt kijken zonder de uitslag te kennen.</p>` +
+      matchLijst(list),
   })
 }
 
@@ -345,7 +395,8 @@ function groepPage(letter, list, teams) {
         `<a href="${teamPath(t)}" class="rounded-full border border-line bg-pitch px-3.5 py-1.5 text-[13px] font-semibold text-cream transition-colors hover:border-line-strong">${esc(t)}</a>`,
     )
     .join('')
-  const body = `<div class="mt-6 flex flex-wrap gap-2">${teamLinks}</div>${matchLijst(list)}`
+  const intro = `<p class="mt-6 text-[14px] leading-relaxed text-moss">Bekijk alle wedstrijden uit ${naam} van het WK 2026 spoilervrij terug. Geen Spoilers verbergt de scores en eindstanden, zodat je de samenvattingen kunt kijken zonder dat de afloop verklapt wordt.</p>`
+  const body = `${intro}<div class="mt-6 flex flex-wrap gap-2">${teamLinks}</div>${matchLijst(list)}`
   return layout({
     title: `${naam} WK 2026 terugkijken | Geen Spoilers`,
     description: `${naam} op het WK 2026: ${teams.join(', ')}. Kijk alle wedstrijden spoilervrij terug zonder uitslagen.`,
@@ -375,7 +426,9 @@ function rondePage(stage, list) {
     lead: bekend
       ? `${bekend} van ${list.length} wedstrijden bekend`
       : 'De deelnemers worden bekend na de voorgaande ronde',
-    bodyHtml: matchLijst(list),
+    bodyHtml:
+      `<p class="mt-6 text-[14px] leading-relaxed text-moss">Kijk de ${esc(stage)} van het WK 2026 spoilervrij terug. Zodra de samenvattingen beschikbaar zijn, bekijk je ze hier zonder scores, eindstanden of verklappende titels.</p>` +
+      matchLijst(list),
   })
 }
 
@@ -391,17 +444,41 @@ function indexPage({ groepen, rondes, teams, totaal }) {
   const rondeLinks = rondes.map((r) => pill(rondePath(r.stage), r.stage)).join('')
   const teamLinks = teams.map((t) => pill(teamPath(t), t)).join('')
 
+  const intro = `<p class="mt-6 text-[14px] leading-relaxed text-moss">Kijk alle ${totaal} wedstrijden van het WK 2026 terug zonder dat de uitslag je voor is. Kies een groep, knock-outronde of land en bekijk de samenvatting spoilervrij — zonder scores, eindstanden of verklappende videotitels.</p>`
+
+  const { html: faqHtml, ld: faqLd } = faqBlock([
+    {
+      q: 'Hoe werkt spoilervrij terugkijken?',
+      a: 'Je kiest een wedstrijd en bekijkt de samenvatting zonder dat de uitslag ergens in beeld komt. Geen Spoilers verbergt scores, eindstanden en verklappende videotitels.',
+    },
+    {
+      q: 'Zie ik nergens de uitslag of score?',
+      a: 'Klopt. Geen Spoilers toont geen scores, geen eindstanden en geen aanbevolen video’s die de afloop kunnen verraden.',
+    },
+    {
+      q: 'Waar komen de samenvattingen vandaan?',
+      a: 'De samenvattingen komen van NOS Sport. Wij linken er spoilervrij naartoe.',
+    },
+    {
+      q: 'Wat kost het?',
+      a: 'Niets. Geen Spoilers is gratis te gebruiken.',
+    },
+  ])
+
   return layout({
     title: 'Alle WK 2026-wedstrijden spoilervrij terugkijken | Geen Spoilers',
     description: `Bekijk alle ${totaal} wedstrijden van het WK 2026 spoilervrij terug — per groep, ronde of land. Geen uitslagen, geen titels, alleen de samenvattingen.`,
     path: '/wedstrijden/',
     breadcrumb: [{ name: 'Wedstrijden', path: '/wedstrijden/' }],
+    jsonLd: faqLd ? [faqLd] : [],
     heading: 'Alle WK 2026-wedstrijden',
     lead: `${totaal} wedstrijden · ${groepen.length} groepen · ${teams.length} landen`,
     bodyHtml:
+      intro +
       sectie('Groepen', groepLinks) +
       sectie('Knock-out', rondeLinks) +
-      sectie('Landen', teamLinks),
+      sectie('Landen', teamLinks) +
+      faqHtml,
   })
 }
 
