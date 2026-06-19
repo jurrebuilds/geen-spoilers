@@ -392,8 +392,6 @@ export default function Player({ match, onBack }) {
   // 'poster' | 'loading' | 'playing' | 'paused' | 'ended' | 'error'
   const [phase, setPhase] = useState('poster')
   const [progress, setProgress] = useState({ time: 0, duration: 0 })
-  // 'samenvatting' (standaard) of 'live' (hele wedstrijd terugkijken)
-  const [source, setSource] = useState(match.youtubeId ? 'samenvatting' : 'live')
   // tijdens slepen: positie 0..1 op de balk, anders null
   const [dragFrac, setDragFrac] = useState(null)
   const mountRef = useRef(null)
@@ -427,7 +425,7 @@ export default function Player({ match, onBack }) {
 
       playerRef.current = new YT.Player(mountRef.current, {
         host: 'https://www.youtube-nocookie.com',
-        videoId: source === 'samenvatting' ? match.youtubeId : match.livestreamId,
+        videoId: match.youtubeId,
         width: '100%',
         height: '100%',
         playerVars: {
@@ -480,7 +478,7 @@ export default function Player({ match, onBack }) {
         playerRef.current = null
       }
     }
-  }, [source, match.youtubeId, match.livestreamId])
+  }, [match.youtubeId])
 
   const start = () => {
     if (apiFailedRef.current) {
@@ -534,24 +532,10 @@ export default function Player({ match, onBack }) {
     }
   }
 
-  // Wisselen tussen samenvatting en hele wedstrijd: het effect hierboven
-  // ruimt de oude speler op en bouwt er een op voor de nieuwe bron
-  const wisselBron = (nieuw) => {
-    if (nieuw === source) return
-    draggingRef.current = false
-    setDragFrac(null)
-    setProgress({ time: 0, duration: 0 })
-    setPhase('poster')
-    setSource(nieuw)
-  }
-
   const showVideo = phase === 'playing' || phase === 'paused' || phase === 'ended'
 
-  // De video die nu gekozen is; ook gebruikt voor de bronvermelding
-  const actieveVideoId =
-    source === 'samenvatting' ? match.youtubeId : match.livestreamId
-
-  const bronLabel = source === 'samenvatting' ? 'Samenvatting' : 'Hele wedstrijd'
+  // De video; ook gebruikt voor de bronvermelding
+  const actieveVideoId = match.youtubeId
 
   // Positie van de voortgangsbalk in procenten (tijdens slepen: sleeppositie)
   const scrubPct = progress.duration
@@ -662,7 +646,7 @@ export default function Player({ match, onBack }) {
         </button>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-bold uppercase leading-none tracking-[0.1em] text-oranje">
-            {bronLabel}
+            Samenvatting
           </p>
           <h1 className="mt-[3px] truncate text-base font-bold leading-tight tracking-[-0.01em]">
             {match.teamA}
@@ -675,28 +659,6 @@ export default function Player({ match, onBack }) {
           </p>
         </div>
       </header>
-
-      {/* Bronkeuze, alleen als beide bestaan; samenvatting is standaard */}
-      {match.youtubeId && match.livestreamId && (
-        <div className="relative z-30 mx-3 mb-2 flex flex-none gap-1 rounded-full bg-pitch p-[3px]">
-          {[
-            { key: 'samenvatting', label: 'Samenvatting' },
-            { key: 'live', label: 'Hele wedstrijd' },
-          ].map((optie) => (
-            <button
-              key={optie.key}
-              type="button"
-              onClick={() => wisselBron(optie.key)}
-              aria-pressed={source === optie.key}
-              className={`flex-1 rounded-full px-2.5 py-2 text-[13px] font-bold transition-colors duration-150 ${
-                source === optie.key ? 'bg-oranje text-night' : 'text-moss'
-              }`}
-            >
-              {optie.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Videovak: vast 16:9, met de YouTube-speler en alle afdekpanelen
           erbinnen. Zo blijft de wedstrijdinfo eronder altijd zichtbaar. */}
@@ -831,7 +793,7 @@ export default function Player({ match, onBack }) {
               </svg>
             </div>
             <p className="text-base font-bold text-cream">
-              {source === 'samenvatting' ? 'Samenvatting afgelopen' : 'Wedstrijd afgelopen'}
+              Samenvatting afgelopen
             </p>
             <div className="flex items-center gap-2.5">
               <button

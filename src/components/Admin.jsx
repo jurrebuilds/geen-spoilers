@@ -215,7 +215,6 @@ function Rij({ sb, match }) {
     flagA: match.flagA,
     flagB: match.flagB,
     youtubeId: match.youtubeId || '',
-    livestreamId: match.livestreamId || '',
   })
   const [status, setStatus] = useState('idle') // idle | bezig | klaar | fout
 
@@ -237,7 +236,6 @@ function Rij({ sb, match }) {
         flag_a: waarden.flagA,
         flag_b: waarden.flagB,
         youtube_id: waarden.youtubeId.trim() || null,
-        livestream_id: waarden.livestreamId.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', match.id)
@@ -260,20 +258,12 @@ function Rij({ sb, match }) {
         <input {...veld('teamB')} placeholder="Team B" className={klein} />
       </div>
 
-      <div className="mt-2 space-y-2">
+      <div className="mt-2">
         <label className="block">
           <span className="text-xs text-moss">YouTube-ID samenvatting</span>
           <input
             {...veld('youtubeId')}
             placeholder="bijv. SD8KSUrx9jA"
-            className={`${klein} mt-1 w-full`}
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs text-moss">YouTube-ID hele wedstrijd</span>
-          <input
-            {...veld('livestreamId')}
-            placeholder="leeg laten als er geen is"
             className={`${klein} mt-1 w-full`}
           />
         </label>

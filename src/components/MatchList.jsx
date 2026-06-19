@@ -67,7 +67,7 @@ export default function MatchList({ matches, onOpen, filters, onFiltersChange })
     (a, b) => new Date(a.kickoff) - new Date(b.kickoff),
   )
   if (filters.onlyAvailable) {
-    visible = visible.filter((m) => m.youtubeId || m.livestreamId)
+    visible = visible.filter((m) => m.youtubeId)
   }
   if (filters.oranje) {
     visible = visible.filter(
@@ -98,7 +98,7 @@ export default function MatchList({ matches, onOpen, filters, onFiltersChange })
   const yesterday = yesterdayKey()
   let scrollKey = null
   for (const match of visible) {
-    if (match.youtubeId || match.livestreamId) scrollKey = dayKey(match.kickoff)
+    if (match.youtubeId) scrollKey = dayKey(match.kickoff)
   }
   if (!scrollKey) {
     for (const group of groups) {

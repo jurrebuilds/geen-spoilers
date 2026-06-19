@@ -34,7 +34,6 @@ const fromRow = (r) => ({
   kickoff: r.kickoff,
   stage: r.stage ?? '',
   youtubeId: r.youtube_id ?? null,
-  livestreamId: r.livestream_id ?? null,
   venue: r.venue ?? null,
   city: r.city ?? null,
   capacity: r.capacity ?? null,
@@ -295,7 +294,6 @@ function matchPage(m, matches) {
       ['Stadion', stadion],
       ['Weer bij aftrap', weerTekst(m)],
       ['Samenvatting', m.youtubeId ? 'Beschikbaar' : 'Nog niet beschikbaar'],
-      ['Hele wedstrijd', m.livestreamId ? 'Terugkijkbaar' : null],
     ]),
   )
 

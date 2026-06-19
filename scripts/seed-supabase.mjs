@@ -16,7 +16,6 @@ const toRow = (m) => ({
   kickoff: m.kickoff,
   stage: m.stage,
   youtube_id: m.youtubeId,
-  livestream_id: m.livestreamId,
 })
 
 const url = process.env.SUPABASE_URL
@@ -32,7 +31,7 @@ const supabase = createClient(url, key, { auth: { persistSession: false } })
 // Bestaande youtube_id's overschrijven we niet met null (zie merge hieronder).
 const { data: bestaand } = await supabase
   .from('matches')
-  .select('id, youtube_id, livestream_id')
+  .select('id, youtube_id')
 const reedsIngevuld = new Map((bestaand || []).map((r) => [r.id, r]))
 
 const rijen = matches.map((m) => {
@@ -40,7 +39,6 @@ const rijen = matches.map((m) => {
   const oud = reedsIngevuld.get(m.id)
   // een al gevonden video in de database niet per ongeluk wissen
   if (oud?.youtube_id && !rij.youtube_id) rij.youtube_id = oud.youtube_id
-  if (oud?.livestream_id && !rij.livestream_id) rij.livestream_id = oud.livestream_id
   return rij
 })
 
