@@ -188,7 +188,12 @@ export default function App() {
   // meldingen geblokkeerd)? Dan openen we de uitlegpagina i.p.v. stil te falen.
   const toggleVolg = async (match) => {
     const st = currentStatus()
-    if (st === 'unsupported-ios' || st === 'denied' || st === 'unsupported') {
+    if (
+      st === 'ios-andere-browser' ||
+      st === 'unsupported-ios' ||
+      st === 'denied' ||
+      st === 'unsupported'
+    ) {
       setMeldingenFase('open')
       return
     }
