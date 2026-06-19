@@ -102,7 +102,14 @@ function Login({ sb, linkVerlopen }) {
     setStatus('bezig')
     const { error } = await sb.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.href },
+      // Belangrijk: redirect zónder #admin-hash. Supabase plakt de inlog-tokens
+      // achter de bestaande hash; met "#admin" wordt dat "#admin#access_token=…"
+      // en dan leest de client de tokens niet (sleutel wordt "admin#access_token").
+      // Zonder hash landt het op "#access_token=…"; isAdminRoute pikt dat op en
+      // het cleanup-effect zet de hash daarna terug naar "#admin".
+      options: {
+        emailRedirectTo: window.location.origin + window.location.pathname,
+      },
     })
     setStatus(error ? 'fout' : 'verstuurd')
   }
