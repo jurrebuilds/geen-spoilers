@@ -283,25 +283,40 @@ export default function App() {
               />
               {/* Bewust helemaal onderaan, voorbij de finale: wie iets kwijt
                   wil kan het vinden, verder leidt het nergens af */}
-              <footer className="flex flex-col items-center gap-1.5 px-[18px] pb-3 pt-10 text-center">
-                <p className="text-[12.5px] leading-normal text-moss-mid">
-                  Foutje gezien of mis je een samenvatting?
-                </p>
+              <footer className="mt-10 flex flex-col items-center gap-4 border-t border-line/60 px-[18px] pb-3 pt-7 text-center">
+                <button
+                  type="button"
+                  onClick={() => setMeldingenFase('open')}
+                  className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream active:text-cream"
+                >
+                  <svg viewBox="0 0 24 24" width="17" height="17" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  Meldingen
+                </button>
+                {/* Stille ingang naar de crawlbare wedstrijdpagina's */}
+                <a
+                  href="/wedstrijden/"
+                  className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream"
+                >
+                  <svg viewBox="0 0 24 24" width="17" height="17" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 6h11M9 12h11M9 18h11" />
+                    <path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+                  </svg>
+                  Alle wedstrijden
+                </a>
                 <button
                   type="button"
                   onClick={() => setContactFase('open')}
-                  className="rounded-full px-3 py-1.5 text-[13px] font-bold text-moss underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-cream active:text-cream"
+                  className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream active:text-cream"
                 >
+                  <svg viewBox="0 0 24 24" width="17" height="17" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M4 7l8 6 8-6" />
+                  </svg>
                   Stuur een bericht
                 </button>
-                {/* Stille ingang naar de crawlbare wedstrijdpagina's; leidt
-                    de gewone gebruiker niet af */}
-                <a
-                  href="/wedstrijden/"
-                  className="text-[12px] font-semibold text-moss-dim underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-moss"
-                >
-                  Alle wedstrijden
-                </a>
               </footer>
             </div>
           )}
