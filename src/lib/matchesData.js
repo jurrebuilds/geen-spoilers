@@ -16,7 +16,6 @@ export function fromRow(r) {
     kickoff: r.kickoff,
     stage: r.stage ?? '',
     youtubeId: r.youtube_id ?? null,
-    livestreamId: r.livestream_id ?? null,
     // Verrijking onder de video (mag ontbreken: dan tonen we die secties niet)
     venue: r.venue ?? null,
     city: r.city ?? null,
@@ -43,7 +42,6 @@ export function toRow(m) {
     kickoff: m.kickoff,
     stage: m.stage,
     youtube_id: m.youtubeId,
-    livestream_id: m.livestreamId,
   }
 }
 

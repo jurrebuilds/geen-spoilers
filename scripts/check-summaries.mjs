@@ -1,10 +1,6 @@
 #!/usr/bin/env node
-// Zoekt automatisch NOS-video's voor gespeelde wedstrijden en vult ze in:
-// - samenvatting (youtubeId): NOS-samenvattingstitel (zie lijktSamenvatting)
-//   + beide teamnamen
-// - terugkijkbare livestream (livestreamId): titel bevat "live" + beide
-//   teamnamen. Pas vanaf 4 uur na de aftrap, zodat we nooit een nog lopende
-//   stream toevoegen (die zou op het live-moment starten en de stand verraden).
+// Zoekt automatisch NOS-samenvattingen voor gespeelde wedstrijden en vult het
+// youtubeId in: NOS-samenvattingstitel (zie lijktSamenvatting) + beide teamnamen.
 //
 // Twee modi:
 // - DB-modus: als SUPABASE_URL + SUPABASE_SERVICE_KEY gezet zijn (zo draait de
@@ -105,8 +101,8 @@ async function haalFeed(bron) {
 // Paraguay | Groep D | WK2026" stond zonder dat woord online). Daarom
 // accepteren we ook het vaste NOS-metaformat "... | WK2026". Korte goal-clips
 // zijn losse zinnen zonder dat format en blijven dus buiten beeld. Een nog
-// terugkijkbare livestream ("live" in de titel) sluiten we hier uit; die heeft
-// een eigen tak verderop, want hij start op het live-moment en verraadt de stand.
+// lopende live-uitzending ("live" in de titel) sluiten we uit: die start op het
+// live-moment en zou de stand kunnen verraden.
 function lijktSamenvatting(titel) {
   if (/\blive\b/.test(titel)) return false
   return titel.includes('samenvatting') || /\|\s*wk\s?2026\b/.test(titel)
@@ -138,8 +134,7 @@ function isNos(info) {
 // bovendien via oEmbed dat de video van NOS komt.
 // De query bevat bewust "NOS samenvatting": zonder die woorden ranken de
 // FIFA-clips en niet-NOS video's (vaak mét de stand in de titel) bovenaan en
-// staat de NOS-samenvatting buiten beeld. Deze fallback mikt dus op
-// samenvattingen; livestreams blijven via de feeds lopen.
+// staat de NOS-samenvatting buiten beeld.
 async function zoekKandidaten(wedstrijd) {
   const q = `NOS samenvatting ${wedstrijd.teamA} ${wedstrijd.teamB} WK2026`
   const url =
@@ -171,7 +166,7 @@ async function zoekKandidaten(wedstrijd) {
   return entries
 }
 
-// Vul een veld (youtubeId of livestreamId) in op de regel van deze wedstrijd
+// Vul het youtubeId in op de regel van deze wedstrijd
 function vulIn(bron, matchId, veld, videoId) {
   const regels = bron.split('\n')
   const i = regels.findIndex(
@@ -189,7 +184,6 @@ const fromRow = (r) => ({
   teamB: r.team_b ?? '',
   kickoff: r.kickoff,
   youtubeId: r.youtube_id ?? null,
-  livestreamId: r.livestream_id ?? null,
 })
 
 // De opslag verschilt per modus, de zoeklogica eronder is identiek.
@@ -200,7 +194,7 @@ async function maakOpslag() {
     const base = process.env.SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_KEY
     const headers = { apikey: key, Authorization: `Bearer ${key}` }
-    const veldNaam = { youtubeId: 'youtube_id', livestreamId: 'livestream_id' }
+    const veldNaam = { youtubeId: 'youtube_id' }
     return {
       async getMatches() {
         const res = await fetch(
@@ -255,10 +249,7 @@ async function main() {
   const matches = await opslag.getMatches()
   const nu = Date.now()
   const teChecken = matches.filter(
-    (m) =>
-      m.teamB &&
-      new Date(m.kickoff).getTime() < nu &&
-      (!m.youtubeId || !m.livestreamId),
+    (m) => m.teamB && new Date(m.kickoff).getTime() < nu && !m.youtubeId,
   )
 
   if (teChecken.length === 0) {
@@ -299,12 +290,11 @@ async function main() {
     // video kan de stand in de titel hebben ("... (1-1)"); die slaan we over en
     // we zoeken door naar de NOS-versie.
     let zoekPool = null
-    const vindBruikbaar = async (predikaat, magZoeken = true) => {
+    const vindBruikbaar = async (predikaat) => {
       const past = (e) => bevatTeams(e) && predikaat(e)
       for (const entry of entries.filter(past)) {
         if (await haalVideoInfo(entry.videoId)) return entry
       }
-      if (!magZoeken) return null
       if (zoekPool === null) zoekPool = await zoekKandidaten(wedstrijd)
       for (const entry of zoekPool.filter(past)) {
         const info = await haalVideoInfo(entry.videoId)
@@ -313,7 +303,7 @@ async function main() {
       return null
     }
 
-    // 1. Samenvatting
+    // Samenvatting
     if (!wedstrijd.youtubeId) {
       const treffer = await vindBruikbaar((e) => lijktSamenvatting(e.titel))
       if (!treffer) {
@@ -321,20 +311,6 @@ async function main() {
       } else if (await opslag.vul(wedstrijd.id, 'youtubeId', treffer.videoId)) {
         toegevoegd++
         console.log(`✓ Samenvatting toegevoegd: ${naam}`)
-      }
-    }
-
-    // 2. Terugkijkbare livestream (pas als de wedstrijd zeker is afgelopen)
-    const klaar =
-      nu > new Date(wedstrijd.kickoff).getTime() + 4 * 60 * 60 * 1000
-    if (!wedstrijd.livestreamId && klaar) {
-      const treffer = await vindBruikbaar(
-        (e) => /\blive\b/.test(e.titel) && !e.titel.includes('samenvatting'),
-        false,
-      )
-      if (treffer && (await opslag.vul(wedstrijd.id, 'livestreamId', treffer.videoId))) {
-        toegevoegd++
-        console.log(`✓ Livestream toegevoegd: ${naam}`)
       }
     }
   }

@@ -25,10 +25,8 @@ function TeamRow({ name, available }) {
 }
 
 export default function MatchCard({ match, onOpen }) {
-  const available = Boolean(match.youtubeId || match.livestreamId)
+  const available = Boolean(match.youtubeId)
   const placeholder = !match.teamB
-  // alleen de hele wedstrijd, geen samenvatting
-  const liveOnly = available && !match.youtubeId
 
   // Nog niet ingevulde knock-outwedstrijd: gestippelde vlag, gedempte tekst
   if (placeholder) {
@@ -114,11 +112,6 @@ export default function MatchCard({ match, onOpen }) {
         <TeamRow name={match.teamB} available />
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
-        {liveOnly && (
-          <span className="rounded-full border border-line-strong px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[0.05em] leading-none text-moss">
-            Hele wedstrijd
-          </span>
-        )}
         <span
           className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-oranje"
           aria-hidden="true"

@@ -13,7 +13,6 @@ create table if not exists public.matches (
   kickoff       timestamptz not null,
   stage         text not null default '',
   youtube_id    text,
-  livestream_id text,
   updated_at    timestamptz not null default now()
 );
 
