@@ -113,13 +113,18 @@ export async function registerServiceWorker() {
 // PushManager en upsert het abonnement in Supabase. Geeft de PushSubscription
 // terug bij succes, of null (geen toestemming / mislukt).
 async function zorgVoorAbonnement() {
+  // Toestemming als allereerste vragen, vóór enige andere await. Safari/iOS
+  // staat Notification.requestPermission() alleen toe binnen de actieve
+  // tik-actie; na een await is die activatie verlopen en verschijnt er geen
+  // prompt (de belofte lost dan stil op als 'default'). Daarna pas de service
+  // worker en het abonnement, dat mag wel na een await.
+  const perm = await Notification.requestPermission()
+  if (perm !== 'granted') return null
+
   const reg =
     (await navigator.serviceWorker.getRegistration()) ||
     (await registerServiceWorker())
   await navigator.serviceWorker.ready
-
-  const perm = await Notification.requestPermission()
-  if (perm !== 'granted') return null
 
   let sub = await reg.pushManager.getSubscription()
   if (!sub) {
