@@ -836,12 +836,14 @@ export default function Player({ match, onBack }) {
               </svg>
             </span>
             <p className="text-[14.5px] font-bold text-cream">
-              Niet hier af te spelen
+              Afspelen hier niet mogelijk
             </p>
             <p className="max-w-[280px] text-[12px] leading-[1.45] text-moss">
               NOS heeft het insluiten van deze video helaas uitgezet. Bekijk 'm
-              op YouTube. Let op: thumbnails, reacties en aanbevolen video's
-              kunnen de uitslag verraden.
+              op YouTube.
+              <br />
+              Let op: thumbnails, reacties en aanbevolen video's kunnen de
+              uitslag verraden.
             </p>
             {actieveVideoId && (
               <a
