@@ -261,17 +261,6 @@ function Verrijking({ match, actieveVideoId }) {
             uitslag kunnen verraden.
           </p>
         </div>
-        <div className="mt-4 flex items-start gap-[11px]">
-          <span className="flex h-[18px] flex-none items-center">
-            <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-moss-mid" fill="none" strokeWidth="1.8" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v4.5M12 16h.01" strokeLinecap="round" />
-            </svg>
-          </span>
-          <p className="text-[12px] leading-[1.5] text-moss">
-            De video werkt mogelijk niet vanuit het buitenland of met&nbsp;een&nbsp;vpn.
-          </p>
-        </div>
       </div>
 
       {/* Opstelling bij aftrap (direct onder de bron) */}
@@ -822,35 +811,64 @@ export default function Player({ match, onBack }) {
           </div>
         )}
 
-        {/* Foutpaneel: nooit terugvallen op YouTube-titel of -thumbnail */}
+        {/* Foutpaneel: NOS zet het insluiten van hun video's uit, waardoor de
+            speler weigert (foutcode 101/150). Eerlijke uitleg + uitwijk naar
+            YouTube, mét spoilerwaarschuwing. Nooit terugvallen op de
+            YouTube-titel of -thumbnail. */}
         {phase === 'error' && (
           <div
-            className="absolute inset-0 z-20 flex animate-panel-in flex-col items-center justify-center gap-2.5 px-6 text-center"
+            className="absolute inset-0 z-20 flex animate-panel-in flex-col items-center justify-center gap-2 px-5 text-center"
             style={{ backgroundColor: BG }}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line-strong bg-pitch-raised">
+            <span className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-oranje">
               <svg
                 viewBox="0 0 24 24"
-                width="24"
-                height="24"
-                className="fill-none stroke-oranje"
-                strokeWidth="2"
+                width="22"
+                height="22"
+                className="ml-[2px] fill-night"
                 aria-hidden="true"
               >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7.6v5.2" strokeLinecap="round" />
-                <circle cx="12" cy="16.3" r="0.5" className="fill-oranje" stroke="none" />
+                <path d="M8 5.5v13l11-6.5z" />
               </svg>
-            </div>
-            <p className="max-w-[280px] text-[13.5px] leading-snug text-cream">
-              Deze samenvatting kan hier niet worden afgespeeld. Kijk je vanuit
-              het buitenland of met een vpn? Dan is de video mogelijk niet
-              beschikbaar.
+            </span>
+            <p className="text-[14.5px] font-bold text-cream">
+              Niet hier af te spelen
             </p>
+            <p className="max-w-[280px] text-[12px] leading-[1.45] text-moss">
+              NOS heeft het insluiten van deze video uitgezet. Bekijk 'm op
+              YouTube — let op: titels en reacties verraden daar de uitslag.
+            </p>
+            {actieveVideoId && (
+              <a
+                href={`https://www.youtube.com/watch?v=${actieveVideoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  track('youtube_uitgeweken', {
+                    match_id: match.id,
+                    teams: `${match.teamA} - ${match.teamB}`,
+                    stage: match.stage || null,
+                  })
+                }
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-oranje px-[18px] py-2 text-[13px] font-bold text-night transition-transform duration-150 active:scale-95"
+              >
+                Open op YouTube
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  className="fill-none stroke-night"
+                  strokeWidth="2.2"
+                  aria-hidden="true"
+                >
+                  <path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+            )}
             <button
               type="button"
               onClick={onBack}
-              className="mt-1 rounded-full bg-oranje px-[18px] py-2 text-[13px] font-bold text-night transition-transform duration-150 active:scale-95"
+              className="mt-0.5 text-[12px] font-semibold text-moss-dim transition-colors active:text-moss"
             >
               Terug naar wedstrijden
             </button>
