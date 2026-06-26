@@ -658,9 +658,13 @@ export default function Player({ match, onBack }) {
       </header>
 
       {/* Videovak: vast 16:9, met de YouTube-speler en alle afdekpanelen
-          erbinnen. Zo blijft de wedstrijdinfo eronder altijd zichtbaar. */}
+          erbinnen. Zo blijft de wedstrijdinfo eronder altijd zichtbaar.
+          In de foutstand is er geen video meer: dan groeit het vak mee met
+          de uitleg en knoppen, zodat die niet worden afgekapt. */}
       <div
-        className="relative mx-3 aspect-video flex-none overflow-hidden rounded-2xl border border-line"
+        className={`relative mx-3 flex-none overflow-hidden rounded-2xl border border-line ${
+          phase === 'error' ? 'min-h-60' : 'aspect-video'
+        }`}
         style={{ backgroundColor: BG }}
       >
         {/* De YouTube-speler vervangt de binnenste div. De wrapper steekt
@@ -817,7 +821,7 @@ export default function Player({ match, onBack }) {
             YouTube-titel of -thumbnail. */}
         {phase === 'error' && (
           <div
-            className="absolute inset-0 z-20 flex animate-panel-in flex-col items-center justify-center gap-2 px-5 text-center"
+            className="relative z-20 flex min-h-60 animate-panel-in flex-col items-center justify-center gap-2 px-5 py-7 text-center"
             style={{ backgroundColor: BG }}
           >
             <span className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-oranje">
@@ -832,11 +836,14 @@ export default function Player({ match, onBack }) {
               </svg>
             </span>
             <p className="text-[14.5px] font-bold text-cream">
-              Niet hier af te spelen
+              Afspelen hier niet mogelijk
             </p>
             <p className="max-w-[280px] text-[12px] leading-[1.45] text-moss">
-              NOS heeft het insluiten van deze video uitgezet. Bekijk 'm op
-              YouTube — let op: titels en reacties verraden daar de uitslag.
+              NOS heeft het insluiten van deze video helaas uitgezet. Bekijk 'm
+              op YouTube.
+              <br />
+              Let op: thumbnails, reacties en aanbevolen video's kunnen de
+              uitslag verraden.
             </p>
             {actieveVideoId && (
               <a
@@ -852,7 +859,7 @@ export default function Player({ match, onBack }) {
                 }
                 className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-oranje px-[18px] py-2 text-[13px] font-bold text-night transition-transform duration-150 active:scale-95"
               >
-                Open op YouTube
+                Bekijk op YouTube
                 <svg
                   viewBox="0 0 24 24"
                   width="14"
@@ -868,7 +875,7 @@ export default function Player({ match, onBack }) {
             <button
               type="button"
               onClick={onBack}
-              className="mt-0.5 text-[12px] font-semibold text-moss-dim transition-colors active:text-moss"
+              className="inline-flex items-center rounded-full border border-line-strong bg-transparent px-[18px] py-2 text-[13px] font-bold text-cream transition-[transform,background-color] duration-150 active:scale-95 active:bg-pitch-raised"
             >
               Terug naar wedstrijden
             </button>
