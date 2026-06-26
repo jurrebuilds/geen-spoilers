@@ -839,11 +839,8 @@ export default function Player({ match, onBack }) {
               Afspelen hier niet mogelijk
             </p>
             <p className="max-w-[280px] text-[12px] leading-[1.45] text-moss">
-              NOS heeft het insluiten van deze video helaas uitgezet. Bekijk 'm
-              op YouTube.
-              <br />
-              Let op: thumbnails, reacties en aanbevolen video's kunnen de
-              uitslag verraden.
+              NOS heeft het insluiten van deze video uitgezet. Bekijk 'm op
+              YouTube, maar pas op voor spoilers.
             </p>
             {actieveVideoId && (
               <a
