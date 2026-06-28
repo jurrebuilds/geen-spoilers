@@ -61,9 +61,29 @@ Zonder Supabase werkt de app gewoon op `src/data/matches.js`. Met Supabase verhu
 
 1. Zet het project in een GitHub-repo (maak hem openbaar voor onbeperkte Actions-minuten).
 2. Voeg onder Settings > Secrets and variables > Actions twee secrets toe: `SUPABASE_URL` en `SUPABASE_SERVICE_KEY`.
-3. Klaar. `.github/workflows/check-summaries.yml` draait elke 15 minuten en vult nieuwe samenvattingen automatisch. Vlak na een wedstrijd staat de samenvatting daardoor meestal binnen een kwartier in de app.
+3. De workflow `.github/workflows/check-summaries.yml` heeft alleen een `workflow_dispatch`-trigger en wordt elke 10 minuten extern aangeroepen via een pinger op [cron-job.org](https://cron-job.org), die de GitHub-dispatch-API aanspreekt. GitHub's eigen scheduler bleek te onbetrouwbaar voor deze cadans. De workflow vult nieuwe samenvattingen aan en stuurt daarna voor elke nieuwe samenvatting een spoilervrije pushmelding. Vlak na een wedstrijd staat de samenvatting daardoor meestal binnen een kwartier in de app.
 
 **Admin-scherm:** open de app met `#admin` erachter (bijv. `http://localhost:5173/#admin`). Log in via een magic link op het beheerders-e-mailadres. Daarna kun je YouTube-ID's plakken en teamnamen van knock-outs invullen. De database staat alleen schrijven toe voor dat ene e-mailadres.
+
+## Automatische verrijking (stadion, weer, opstelling)
+
+`scripts/enrich-matches.mjs` (los: `npm run enrich`) haalt voor net gespeelde wedstrijden het stadion, het weer bij aftrap en de opstelling op bij [api-sports.io](https://api-sports.io) en schrijft die in de database. Het werkt write-once: een veld dat al gevuld is wordt nooit overschreven, dus de gratis API-limiet (100 requests/dag) raakt niet op. Spoilervrij: alleen de endpoints `/fixtures` en `/fixtures/lineups` worden gebruikt, nooit een uitslag-endpoint.
+
+In de cloud draait dit via `.github/workflows/enrich-matches.yml` op een eigen cron (`*/15 * * * *`, elke 15 minuten). Vereist de secrets `APISPORTS_KEY`, `SUPABASE_URL` en `SUPABASE_SERVICE_KEY`.
+
+## Pushmeldingen
+
+De app kan een spoilervrije webpush-melding sturen zodra de samenvatting van een gevolgde wedstrijd klaarstaat. De gebruiker volgt wedstrijden via het belletje in de lijst en beheert toestemming in het meldingen-paneel (`src/components/Meldingen.jsx`). De clientlogica zit in `src/lib/push.js` en de service worker in `public/sw.js`; verzenden gebeurt server-side via `scripts/send-push.mjs` (los: `npm run push`), die meelift op de check-workflow. De melding bevat alleen teamnamen en een link, nooit een score. Op iOS werkt webpush alleen als de app eerst via Safari aan het beginscherm is toegevoegd.
+
+Genereer de VAPID-sleutels eenmalig met `npx web-push generate-vapid-keys` en zet `VITE_VAPID_PUBLIC_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` en `VAPID_SUBJECT` in `.env.local` en als GitHub-secrets (zie `.env.example`).
+
+## SEO-landingspagina's
+
+`npm run build` draait `vite build` en daarna `scripts/build-seo.mjs`, dat statische landingspagina's genereert per wedstrijd, team, groep en ronde, plus `sitemap.xml` en `robots.txt`. Alles is spoilervrij: er staan geen scores in de HTML of de JSON-LD.
+
+## Analytics
+
+Naast Vercel Analytics (`<Analytics />` in `src/main.jsx`) draait optioneel PostHog (`src/lib/analytics.js`), standaard EU-gehost. De wrapper is een no-op zolang `VITE_POSTHOG_KEY` leeg is en is privacybewust: geen session recording, geen autocapture, en events bevatten alleen spoilervrije eigenschappen (wedstrijd-ID, teamnamen). Zie `.env.example` voor de sleutels.
 
 ## Onderhoud
 
@@ -71,11 +91,12 @@ Operationele feiten die niet uit de code blijken:
 
 - **Repository**: `jurrebuilds/geen-spoilers` (publiek, zodat GitHub Actions onbeperkte minuten heeft).
 - **Supabase-project**: `dqaqdldnsbtxjryjapor` (URL `https://dqaqdldnsbtxjryjapor.supabase.co`). De `anon`-sleutel is publiek; de `service_role`-sleutel staat alleen in `.env.local` (niet in git) en als GitHub-secret `SUPABASE_SERVICE_KEY`.
-- **Sleutels op een nieuwe laptop**: `.env.local` staat niet in git. Kopieer `.env.example` en vul de vier waarden opnieuw in (uit Supabase > Project Settings > API). Zonder `.env.local` valt de app netjes terug op de lokale wedstrijdenlijst.
-- **Check handmatig draaien**: lokaal `npm run check`; in de cloud via GitHub > Actions > "Check samenvattingen" > "Run workflow".
+- **Sleutels op een nieuwe laptop**: `.env.local` staat niet in git. Kopieer `.env.example` en vul de waarden opnieuw in (de Supabase-sleutels uit Project Settings > API; PostHog, VAPID en api-sports.io alleen als je die features gebruikt). Zonder `.env.local` valt de app netjes terug op de lokale wedstrijdenlijst.
+- **Check handmatig draaien**: lokaal `npm run check`; in de cloud via GitHub > Actions > "Check samenvattingen" > "Run workflow". Verrijking los draaien kan met `npm run enrich`, een pushmelding sturen met `npm run push`.
+- **Cron-trigger**: de check-workflow heeft geen eigen schema; een pinger op cron-job.org roept elke 10 minuten de GitHub-dispatch-API aan. De verrijk-workflow draait wél op een eigen GitHub-cron (`*/15`). Stopt de check ineens, controleer dan eerst de pinger op cron-job.org.
 - **Waarom REST en niet de Supabase-SDK in het check-script**: de SDK eist een WebSocket, die op oudere Node-versies (zoals Node 20 op de GitHub-runner) ontbreekt. Het script praat daarom rechtstreeks met de REST-API. Herintroduceer de SDK daar niet.
 - **Service-sleutel roteren** (bij twijfel over lekken): Supabase > Project Settings > API > service_role "roll", daarna de nieuwe waarde in `.env.local` én in de GitHub-secret `SUPABASE_SERVICE_KEY` zetten.
 
 ## V2 (later)
 
-Automatische import van knock-outteams (let op: weten wie doorgaat is zelf een spoiler) en PWA met pushmelding "samenvatting staat klaar".
+Automatische import van knock-outteams (let op: weten wie doorgaat is zelf een spoiler). De PWA met pushmelding "samenvatting staat klaar" is inmiddels gebouwd (zie "Pushmeldingen").
