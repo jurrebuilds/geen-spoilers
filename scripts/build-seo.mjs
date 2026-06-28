@@ -21,7 +21,7 @@ import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises'
 import { dayLabel, kickoffTime } from '../src/lib/format.js'
 import { slugify, groupLetter } from '../src/lib/slug.js'
 
-const SITE = 'https://www.geenspoilers.nl'
+const SITE = 'https://geenspoilers.nl'
 const DIST = new URL('../dist/', import.meta.url)
 
 // ── Data laden ────────────────────────────────────────────────────────────
