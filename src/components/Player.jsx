@@ -8,6 +8,7 @@ import {
   timeInZone,
 } from '../lib/format.js'
 import { Flag } from '../lib/flags.jsx'
+import SteunRegel from './SteunRegel.jsx'
 
 // Moet exact de app-achtergrond zijn: de balk over de YouTube-titel
 // en de afdekpanelen vallen dan weg tegen de rest van het scherm.
@@ -234,11 +235,12 @@ function Verrijking({ match, actieveVideoId }) {
 
   return (
     <div className="px-3 pt-2">
-      {/* Bron & let-op, herstyled, direct onder de video */}
-      <div className="rounded-2xl border border-line bg-pitch px-4 py-3.5">
+      {/* Bron & let-op, direct onder de video. Zelfde stijl als de doneerregel
+          eronder (amber icoon, donkere kaart) zodat ze een paar vormen. */}
+      <div className="rounded-[14px] border border-line bg-[#10160f] px-[13px] py-[11px]">
         <div className="flex items-start gap-[11px]">
           <span className="flex h-[18px] flex-none items-center">
-            <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-moss-mid" fill="none" strokeWidth="1.8" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" className="stroke-[#d99a5a]" fill="none" strokeWidth="1.8" aria-hidden="true">
               <rect x="3" y="6" width="13" height="12" rx="2" />
               <path d="M16 10.5l5-2.5v8l-5-2.5z" strokeLinejoin="round" />
             </svg>
@@ -262,6 +264,10 @@ function Verrijking({ match, actieveVideoId }) {
           </p>
         </div>
       </div>
+
+      {/* Vrijwillige donatie via Tikkie; verschijnt alleen met een ingestelde
+          link (VITE_TIKKIE_URL) */}
+      <SteunRegel match={match} />
 
       {/* Opstelling bij aftrap (direct onder de bron) */}
       {lineup && (
