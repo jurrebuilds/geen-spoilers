@@ -32,9 +32,7 @@ export default function SteunRegel({ match }) {
         </svg>
       </span>
       <span className="flex-1 text-[12px] font-semibold leading-[1.3] text-[#a7b0a3]">
-        Steun geenspoilers.nl
-        <br />
-        met een biertje
+        Steun geenspoilers.nl met een biertje
       </span>
       <span className="flex flex-none items-center gap-1 text-[11.5px] font-bold text-oranje">
         via Tikkie
