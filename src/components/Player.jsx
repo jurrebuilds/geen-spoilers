@@ -385,10 +385,8 @@ function Verrijking({ match, actieveVideoId }) {
 }
 
 export default function Player({ match, onBack }) {
-  // 'probing' | 'poster' | 'loading' | 'playing' | 'paused' | 'ended' | 'error'
-  // 'probing': speler laadt, we weten nog niet of de video speelbaar is. Pas
-  // bij CUED tonen we de play-poster; bij een fout direct het foutscherm.
-  const [phase, setPhase] = useState('probing')
+  // 'poster' | 'loading' | 'playing' | 'paused' | 'ended' | 'error'
+  const [phase, setPhase] = useState('poster')
   const [progress, setProgress] = useState({ time: 0, duration: 0 })
   // tijdens slepen: positie 0..1 op de balk, anders null
   const [dragFrac, setDragFrac] = useState(null)
@@ -402,8 +400,6 @@ export default function Player({ match, onBack }) {
   const pendingPlayRef = useRef(false)
   const apiFailedRef = useRef(false)
   const watchdogRef = useRef(null)
-  const erroredRef = useRef(false)
-  const revealRef = useRef(null)
 
   // De speler wordt alvast opgebouwd zodra de bron bekend is, onzichtbaar
   // achter de poster. Mobiel (iOS/Android) staat afspelen met geluid alleen
@@ -412,15 +408,13 @@ export default function Player({ match, onBack }) {
   useEffect(() => {
     let cancelled = false
     readyRef.current = false
-    erroredRef.current = false
     ;(async () => {
       let YT
       try {
         YT = await loadYouTubeAPI()
       } catch {
         apiFailedRef.current = true
-        // Zonder speler valt er niets te laden: meteen het foutscherm.
-        if (!cancelled) setPhase('error')
+        if (!cancelled && pendingPlayRef.current) setPhase('error')
         return
       }
       if (cancelled || !mountRef.current) return
@@ -452,12 +446,6 @@ export default function Player({ match, onBack }) {
               setPhase('ended')
             } else if (e.data === YT.PlayerState.PAUSED) {
               setPhase('paused')
-            } else if (e.data === YT.PlayerState.CUED) {
-              // Video is geladen en speelbaar: nu pas de play-poster tonen.
-              if (!erroredRef.current && phaseRef.current === 'probing') {
-                clearTimeout(revealRef.current)
-                setPhase('poster')
-              }
             } else if (
               e.data === YT.PlayerState.PLAYING ||
               e.data === YT.PlayerState.BUFFERING
@@ -468,32 +456,14 @@ export default function Player({ match, onBack }) {
             }
           },
           onError: () => {
-            // Geblokkeerde insluiting (NOS): meteen het foutscherm, en het
-            // laadscherm/poster mag niet meer onthuld worden.
-            erroredRef.current = true
-            clearTimeout(revealRef.current)
-            clearTimeout(watchdogRef.current)
             setPhase('error')
           },
         },
       })
-
-      // Vangnet, onafhankelijk van de speler-events: mocht de speler niet
-      // initialiseren (geen CUED, geen fout, zelfs geen onReady), toon dan na
-      // een ruime marge alsnog de poster, zodat niemand op de spinner blijft
-      // hangen. In de praktijk vuurt CUED (speelbaar) of onError (geblokkeerd)
-      // ruim hiervoor en is deze timer dan al gewist.
-      clearTimeout(revealRef.current)
-      revealRef.current = setTimeout(() => {
-        if (!erroredRef.current && phaseRef.current === 'probing') {
-          setPhase('poster')
-        }
-      }, 4500)
     })()
     return () => {
       cancelled = true
       clearTimeout(watchdogRef.current)
-      clearTimeout(revealRef.current)
       pendingPlayRef.current = false
       if (playerRef.current) {
         try {
@@ -695,12 +665,11 @@ export default function Player({ match, onBack }) {
 
       {/* Videovak: vast 16:9, met de YouTube-speler en alle afdekpanelen
           erbinnen. Zo blijft de wedstrijdinfo eronder altijd zichtbaar.
-          Bij laden (probing) en in de foutstand is er geen video: die twee
-          delen dezelfde hoogte, zodat de overgang laden → fout niet verspringt
-          en de uitleg/knoppen niet worden afgekapt. */}
+          In de foutstand is er geen video meer: dan groeit het vak mee met
+          de uitleg en knoppen, zodat die niet worden afgekapt. */}
       <div
         className={`relative mx-3 flex-none overflow-hidden rounded-2xl border border-line ${
-          phase === 'probing' || phase === 'error' ? 'min-h-[17rem]' : 'aspect-video'
+          phase === 'error' ? 'min-h-60' : 'aspect-video'
         }`}
         style={{ backgroundColor: BG }}
       >
@@ -713,52 +682,6 @@ export default function Player({ match, onBack }) {
         >
           <div ref={mountRef} className="h-full w-full" />
         </div>
-
-        {/* Laadscherm (probing): rustige spinner met wedstrijdcontext, vóórdat
-            we weten of de video speelbaar is. Geen play-knop — die verschijnt
-            pas bij CUED. Zelfde hoogte als het foutpaneel (in-flow min-h),
-            zodat het vak niet verspringt als YouTube meteen een fout geeft. */}
-        {phase === 'probing' && (
-          <div
-            className="relative z-20 flex min-h-[17rem] animate-poster-in flex-col items-center justify-center gap-2.5 px-4 text-center"
-            style={{ backgroundColor: BG }}
-          >
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-moss">
-              {match.stage}
-            </p>
-            <div className="flex items-center gap-3">
-              <Flag team={match.teamA} width={50} height={37} radius={6} />
-              {match.teamB && (
-                <Flag team={match.teamB} width={50} height={37} radius={6} />
-              )}
-            </div>
-            <h2 className="max-w-[300px] text-[19px] font-extrabold leading-[1.08] tracking-[-0.02em]">
-              <TeamNaam name={match.teamA} />
-              {match.teamB && (
-                <>
-                  <span className="font-semibold text-moss-dim"> — </span>
-                  <TeamNaam name={match.teamB} />
-                </>
-              )}
-            </h2>
-            <svg
-              viewBox="0 0 44 44"
-              width="34"
-              height="34"
-              className="mt-1 animate-[spin_.8s_linear_infinite]"
-              aria-hidden="true"
-            >
-              <circle cx="22" cy="22" r="18" fill="none" stroke="#27332a" strokeWidth="4" />
-              <path
-                d="M22 4a18 18 0 0 1 18 18"
-                fill="none"
-                stroke="#ff7a1f"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-        )}
 
         {/* Eigen poster — nooit de YouTube-thumbnail. */}
         {(phase === 'poster' || phase === 'loading') && (
@@ -904,7 +827,7 @@ export default function Player({ match, onBack }) {
             YouTube-titel of -thumbnail. */}
         {phase === 'error' && (
           <div
-            className="relative z-20 flex min-h-[17rem] animate-panel-in flex-col items-center justify-center gap-2 px-5 py-7 text-center"
+            className="relative z-20 flex min-h-60 animate-panel-in flex-col items-center justify-center gap-2 px-5 py-7 text-center"
             style={{ backgroundColor: BG }}
           >
             <span className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-oranje">

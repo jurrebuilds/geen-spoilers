@@ -9,6 +9,7 @@ import {
   volgtMatch,
 } from './lib/push.js'
 import { track } from './lib/analytics.js'
+import { loadYouTubeAPI } from './lib/youtube.js'
 import MatchList from './components/MatchList.jsx'
 import Player from './components/Player.jsx'
 import InstallPrompt from './components/InstallPrompt.jsx'
@@ -146,6 +147,20 @@ export default function App() {
   // tot iemand de meldingen daadwerkelijk aanzet.
   useEffect(() => {
     registerServiceWorker().catch(() => {})
+  }, [])
+
+  // Het YouTube-script alvast op de achtergrond ophalen zodra de app rustig is,
+  // zodat het klaarstaat als iemand een wedstrijd opent. Faalt stil; de speler
+  // probeert het anders gewoon opnieuw op het moment zelf.
+  useEffect(() => {
+    const warmup = () => loadYouTubeAPI().catch(() => {})
+    const ric = window.requestIdleCallback
+    if (typeof ric === 'function') {
+      const id = ric(warmup, { timeout: 3000 })
+      return () => window.cancelIdleCallback?.(id)
+    }
+    const id = setTimeout(warmup, 1500)
+    return () => clearTimeout(id)
   }, [])
 
   useEffect(() => {
