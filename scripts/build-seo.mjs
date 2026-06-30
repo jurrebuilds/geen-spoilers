@@ -109,6 +109,14 @@ function weatherLabel(code) {
   return null
 }
 
+// Geschatte eindtijd: ~2 uur na aftrap (90 min + rust + na-/blessuretijd).
+// Onthult geen uitslag; dient alleen om Event-schema compleet te maken.
+function endDate(kickoff) {
+  const t = new Date(kickoff).getTime()
+  if (Number.isNaN(t)) return null
+  return new Date(t + 2 * 60 * 60 * 1000).toISOString()
+}
+
 function weerTekst(m) {
   const parts = []
   if (m.tempC != null) parts.push(`${Math.round(m.tempC)}°C`)
@@ -336,18 +344,36 @@ function matchPage(m, matches) {
   ])
   body.push(faqHtml)
 
+  const teams = [
+    { '@type': 'SportsTeam', name: m.teamA },
+    { '@type': 'SportsTeam', name: m.teamB },
+  ]
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     name: naam,
     sport: 'Voetbal',
     startDate: m.kickoff,
+    endDate: endDate(m.kickoff) || undefined,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     url: SITE + matchPath(m),
     description: `Samenvatting van ${naam} (${m.stage}, WK 2026) spoilervrij terugkijken.`,
-    competitor: [
-      { '@type': 'SportsTeam', name: m.teamA },
-      { '@type': 'SportsTeam', name: m.teamB },
-    ],
+    competitor: teams,
+    performer: teams,
+    organizer: {
+      '@type': 'Organization',
+      name: 'FIFA',
+      url: 'https://www.fifa.com/',
+    },
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'EUR',
+      availability: 'https://schema.org/InStock',
+      url: SITE + matchPath(m),
+      validFrom: m.kickoff,
+    },
   }
   if (m.venue) {
     ld.location = { '@type': 'Place', name: m.venue, address: m.city || undefined }
