@@ -353,6 +353,7 @@ function matchPage(m, matches) {
     '@type': 'SportsEvent',
     name: naam,
     sport: 'Voetbal',
+    image: [`${SITE}/og-image.png`],
     startDate: m.kickoff,
     endDate: endDate(m.kickoff) || undefined,
     eventStatus: 'https://schema.org/EventScheduled',
