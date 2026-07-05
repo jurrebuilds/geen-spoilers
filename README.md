@@ -60,8 +60,9 @@ Zonder Supabase werkt de app gewoon op `src/data/matches.js`. Met Supabase verhu
 **Automatische check in de cloud (GitHub Actions):**
 
 1. Zet het project in een GitHub-repo (maak hem openbaar voor onbeperkte Actions-minuten).
-2. Voeg onder Settings > Secrets and variables > Actions twee secrets toe: `SUPABASE_URL` en `SUPABASE_SERVICE_KEY`.
-3. Klaar. `.github/workflows/check-summaries.yml` draait elke 15 minuten en vult nieuwe samenvattingen automatisch. Vlak na een wedstrijd staat de samenvatting daardoor meestal binnen een kwartier in de app.
+2. Voeg onder Settings > Secrets and variables > Actions de secrets toe die de workflows gebruiken: `SUPABASE_URL` en `SUPABASE_SERVICE_KEY` (verplicht), plus `VERCEL_DEPLOY_HOOK_URL` (rebuild na nieuwe data), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (pushmeldingen) en `APISPORTS_KEY` (stadion, weer en opstelling verrijken).
+3. Klaar. `.github/workflows/check-summaries.yml` staat op `workflow_dispatch` en wordt elke 10 minuten extern getriggerd via cron-job.org (GitHub's eigen scheduler bleek onbetrouwbaar). Vlak na een wedstrijd staat de samenvatting daardoor meestal binnen een kwartier in de app. Dezelfde workflow verstuurt daarna een spoilervrije pushmelding voor elke nieuw gevonden samenvatting.
+4. `.github/workflows/enrich-matches.yml` draait elke 15 minuten (cron) en vult per gespeelde wedstrijd het stadion, het weer bij aftrap en de opstelling in. Write-once en zuinig met de gratis API-limiet, dus buiten wedstrijddagen valt er niets te doen.
 
 **Admin-scherm:** open de app met `#admin` erachter (bijv. `http://localhost:5173/#admin`). Log in via een magic link op het beheerders-e-mailadres. Daarna kun je YouTube-ID's plakken en teamnamen van knock-outs invullen. De database staat alleen schrijven toe voor dat ene e-mailadres.
 
@@ -73,9 +74,10 @@ Operationele feiten die niet uit de code blijken:
 - **Supabase-project**: `dqaqdldnsbtxjryjapor` (URL `https://dqaqdldnsbtxjryjapor.supabase.co`). De `anon`-sleutel is publiek; de `service_role`-sleutel staat alleen in `.env.local` (niet in git) en als GitHub-secret `SUPABASE_SERVICE_KEY`.
 - **Sleutels op een nieuwe laptop**: `.env.local` staat niet in git. Kopieer `.env.example` en vul de vier waarden opnieuw in (uit Supabase > Project Settings > API). Zonder `.env.local` valt de app netjes terug op de lokale wedstrijdenlijst.
 - **Check handmatig draaien**: lokaal `npm run check`; in de cloud via GitHub > Actions > "Check samenvattingen" > "Run workflow".
+- **SEO-landingspagina's**: `npm run build` draait `vite build` en daarna `scripts/build-seo.mjs`, dat per wedstrijd, team, groep en knock-outronde een statische pagina (plus overzicht, `sitemap.xml` en `robots.txt`) in `dist/` zet. Nooit een uitslag of videotitel in de HTML.
 - **Waarom REST en niet de Supabase-SDK in het check-script**: de SDK eist een WebSocket, die op oudere Node-versies (zoals Node 20 op de GitHub-runner) ontbreekt. Het script praat daarom rechtstreeks met de REST-API. Herintroduceer de SDK daar niet.
 - **Service-sleutel roteren** (bij twijfel over lekken): Supabase > Project Settings > API > service_role "roll", daarna de nieuwe waarde in `.env.local` én in de GitHub-secret `SUPABASE_SERVICE_KEY` zetten.
 
 ## V2 (later)
 
-Automatische import van knock-outteams (let op: weten wie doorgaat is zelf een spoiler) en PWA met pushmelding "samenvatting staat klaar".
+Automatische import van knock-outteams (let op: weten wie doorgaat is zelf een spoiler). De PWA met pushmelding "samenvatting staat klaar" is inmiddels live: zie de VAPID-sleutels in `.env.example`, `src/lib/push.js` en de push-stap in `check-summaries.yml`.
