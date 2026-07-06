@@ -77,6 +77,8 @@ Operationele feiten die niet uit de code blijken:
 - **SEO-landingspagina's**: `npm run build` draait `vite build` en daarna `scripts/build-seo.mjs`, dat per wedstrijd, team, groep en knock-outronde een statische pagina (plus overzicht, `sitemap.xml` en `robots.txt`) in `dist/` zet. Nooit een uitslag of videotitel in de HTML.
 - **Waarom REST en niet de Supabase-SDK in het check-script**: de SDK eist een WebSocket, die op oudere Node-versies (zoals Node 20 op de GitHub-runner) ontbreekt. Het script praat daarom rechtstreeks met de REST-API. Herintroduceer de SDK daar niet.
 - **Service-sleutel roteren** (bij twijfel over lekken): Supabase > Project Settings > API > service_role "roll", daarna de nieuwe waarde in `.env.local` én in de GitHub-secret `SUPABASE_SERVICE_KEY` zetten.
+- **Tikkie-link verloopt**: `VITE_TIKKIE_URL` is een privé-Tikkie die na een paar weken verloopt (huidige verloopt 12 juli 2026). Nieuwe link maken in de Tikkie-app, plakken in Vercel (en `.env.local`) en redeployen; zonder geldige link blijven de doneerregel in de speler én de steunkaart op de homepage gewoon onzichtbaar, er breekt niets.
+- **Steunkaart aan/uit**: de wegklikbare donatiekaart op de homepage staat alleen aan als `VITE_STEUN_KAART` een waarde heeft (bijv. `1`). Wegklikken wordt per waarde onthouden in localStorage; hoog de waarde op (`1` → `2`) om de kaart bij iedereen nog één keer te tonen, bijvoorbeeld rond de finale. Vite bakt env-vars in tijdens de build, dus elke wijziging in Vercel vraagt een redeploy.
 
 ## V2 (later)
 
