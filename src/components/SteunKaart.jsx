@@ -23,7 +23,8 @@ function onthoudWeggeklikt() {
 }
 
 // Donatiekaart in de wedstrijdlijst, direct onder de nieuwste beschikbare
-// samenvatting. Eenmalig wegklikbaar; doneren telt ook als wegklikken.
+// samenvatting. Verdwijnt alleen na bewust wegklikken (kruisje); een klik op
+// de doneerknop niet, want of de betaling is afgerond weten we niet.
 // Zonder Tikkie-link of versienummer (env-vars) verschijnt er niets.
 export default function SteunKaart() {
   const [zichtbaar, setZichtbaar] = useState(
@@ -47,7 +48,6 @@ export default function SteunKaart() {
 
   const doneer = () => {
     track('steun_geopend', { bron: 'home' })
-    onthoudWeggeklikt()
   }
 
   return (
