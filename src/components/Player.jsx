@@ -235,8 +235,11 @@ function Verrijking({ match, actieveVideoId }) {
 
   return (
     <div className="px-3 pt-2">
-      {/* Bron & let-op, direct onder de video. Zelfde stijl als de doneerregel
-          eronder (amber icoon, donkere kaart) zodat ze een paar vormen. */}
+      {/* Vrijwillige donatie via Tikkie, als eerste onder de video zodat hij
+          opvalt; verschijnt alleen met een ingestelde link (VITE_TIKKIE_URL) */}
+      <SteunRegel match={match} />
+
+      {/* Bron & let-op: bewust de rustige grijze kaart onder de steunregel */}
       <div className="rounded-[14px] border border-line bg-[#10160f] px-[13px] py-[11px]">
         <div className="flex items-start gap-[11px]">
           <span className="flex h-[18px] flex-none items-center">
@@ -264,10 +267,6 @@ function Verrijking({ match, actieveVideoId }) {
           </p>
         </div>
       </div>
-
-      {/* Vrijwillige donatie via Tikkie; verschijnt alleen met een ingestelde
-          link (VITE_TIKKIE_URL) */}
-      <SteunRegel match={match} />
 
       {/* Opstelling bij aftrap (direct onder de bron) */}
       {lineup && (

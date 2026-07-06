@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   dayKey,
@@ -8,6 +8,7 @@ import {
   yesterdayKey,
 } from '../lib/format.js'
 import MatchCard from './MatchCard.jsx'
+import SteunKaart from './SteunKaart.jsx'
 
 function FilterChip({ active, label, onClick }) {
   return (
@@ -101,11 +102,17 @@ export default function MatchList({
   // Spring bij openen naar de dag van de nieuwste beschikbare samenvatting:
   // dat is waar je 's ochtends de wedstrijd van vannacht zoekt.
   // Geen enkele samenvatting? Dan naar vandaag (of de dag ervoor).
+  // Onder diezelfde nieuwste samenvatting hangt ook de steunkaart (Tikkie):
+  // precies in het eerste beeld, na de wedstrijd die je komt kijken.
   const today = todayKey()
   const yesterday = yesterdayKey()
   let scrollKey = null
+  let steunKaartNaId = null
   for (const match of visible) {
-    if (match.youtubeId) scrollKey = dayKey(match.kickoff)
+    if (match.youtubeId) {
+      scrollKey = dayKey(match.kickoff)
+      steunKaartNaId = match.id
+    }
   }
   if (!scrollKey) {
     for (const group of groups) {
@@ -229,14 +236,16 @@ export default function MatchList({
             <DayHeading group={group} today={today} yesterday={yesterday} />
             <div className="flex flex-col gap-2 px-3.5 pb-3 pt-2">
               {group.matches.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  onOpen={onOpen}
-                  gevolgd={gevolgd.includes(match.id)}
-                  onToggleVolg={onToggleVolg}
-                  isEersteWachtende={match.id === eersteWachtendeId}
-                />
+                <Fragment key={match.id}>
+                  <MatchCard
+                    match={match}
+                    onOpen={onOpen}
+                    gevolgd={gevolgd.includes(match.id)}
+                    onToggleVolg={onToggleVolg}
+                    isEersteWachtende={match.id === eersteWachtendeId}
+                  />
+                  {match.id === steunKaartNaId && <SteunKaart />}
+                </Fragment>
               ))}
             </div>
           </section>
