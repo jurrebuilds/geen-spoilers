@@ -8,6 +8,7 @@ import {
   timeInZone,
 } from '../lib/format.js'
 import { Flag } from '../lib/flags.jsx'
+import { etappeTypeLabel, afstandLabel } from '../lib/tour.js'
 import SteunRegel from './SteunRegel.jsx'
 
 // Moet exact de app-achtergrond zijn: de balk over de YouTube-titel
@@ -108,6 +109,11 @@ function weatherLabel(code) {
 }
 
 const nlGetal = (n) => Number(n).toLocaleString('nl-NL')
+
+// Spoilervrij analytics-label: teams bij een wedstrijd, "Etappe N" bij de Tour
+// (teamA bevat daar de leesbare etappenaam en teamB is leeg).
+const teamsLabel = (match) =>
+  match.teamB ? `${match.teamA} - ${match.teamB}` : match.teamA
 
 // ── Verrijking onder de video ───────────────────────────────────────────
 function SectieLabel({ children }) {
@@ -384,6 +390,8 @@ function Verrijking({ match, actieveVideoId }) {
 }
 
 export default function Player({ match, onBack }) {
+  // Tour-etappe: geen vlaggen of teamnamen, wel route/type/afstand
+  const isTour = match.sport === 'tour'
   // 'poster' | 'loading' | 'playing' | 'paused' | 'ended' | 'error'
   const [phase, setPhase] = useState('poster')
   const [progress, setProgress] = useState({ time: 0, duration: 0 })
@@ -484,7 +492,7 @@ export default function Player({ match, onBack }) {
     // verdwijnt hierna). Spoilervrij: alleen wie en welke ronde, nooit een uitslag.
     track('video_gestart', {
       match_id: match.id,
-      teams: `${match.teamA} - ${match.teamB}`,
+      teams: teamsLabel(match),
       stage: match.stage || null,
     })
     setPhase('loading')
@@ -651,8 +659,9 @@ export default function Player({ match, onBack }) {
             Samenvatting
           </p>
           <h1 className="mt-[3px] truncate text-base font-bold leading-tight tracking-[-0.01em]">
-            {match.teamA}
-            {match.teamB ? ` – ${match.teamB}` : ''}
+            {isTour
+              ? `Etappe ${match.etappeNr} · ${match.startPlaats} – ${match.finishPlaats}`
+              : `${match.teamA}${match.teamB ? ` – ${match.teamB}` : ''}`}
           </h1>
           <p className="mt-[3px] truncate text-[11.5px] font-semibold tabular-nums text-moss">
             {[match.stage, dayMonthLabel(match.kickoff), kickoffTime(match.kickoff)]
@@ -689,23 +698,40 @@ export default function Player({ match, onBack }) {
             style={{ backgroundColor: BG }}
           >
             <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-moss">
-              {match.stage}
+              {isTour ? `Tour de France · Etappe ${match.etappeNr}` : match.stage}
             </p>
-            <div className="mt-2.5 flex items-center gap-3">
-              <Flag team={match.teamA} width={50} height={37} radius={6} />
-              {match.teamB && (
-                <Flag team={match.teamB} width={50} height={37} radius={6} />
-              )}
-            </div>
-            <h2 className="mt-2.5 max-w-[300px] text-[19px] font-extrabold leading-[1.08] tracking-[-0.02em]">
-              <TeamNaam name={match.teamA} />
-              {match.teamB && (
-                <>
-                  <span className="font-semibold text-moss-dim"> — </span>
-                  <TeamNaam name={match.teamB} />
-                </>
-              )}
-            </h2>
+            {isTour ? (
+              <>
+                <h2 className="mt-2.5 max-w-[300px] text-[19px] font-extrabold leading-[1.08] tracking-[-0.02em]">
+                  <span className="text-cream">{match.startPlaats}</span>
+                  <span className="font-semibold text-moss-dim"> → </span>
+                  <span className="text-cream">{match.finishPlaats}</span>
+                </h2>
+                <p className="mt-1.5 text-[12px] font-semibold text-moss">
+                  {[etappeTypeLabel(match.etappeType), afstandLabel(match.afstandKm)]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="mt-2.5 flex items-center gap-3">
+                  <Flag team={match.teamA} width={50} height={37} radius={6} />
+                  {match.teamB && (
+                    <Flag team={match.teamB} width={50} height={37} radius={6} />
+                  )}
+                </div>
+                <h2 className="mt-2.5 max-w-[300px] text-[19px] font-extrabold leading-[1.08] tracking-[-0.02em]">
+                  <TeamNaam name={match.teamA} />
+                  {match.teamB && (
+                    <>
+                      <span className="font-semibold text-moss-dim"> — </span>
+                      <TeamNaam name={match.teamB} />
+                    </>
+                  )}
+                </h2>
+              </>
+            )}
 
             {phase === 'poster' ? (
               <button
@@ -725,7 +751,9 @@ export default function Player({ match, onBack }) {
                   </svg>
                 </span>
                 <span className="text-[12.5px] font-semibold text-moss">
-                  Geen titel, geen uitslag. Alleen de wedstrijd.
+                  {isTour
+                    ? 'Geen titel, geen uitslag. Alleen de koers.'
+                    : 'Geen titel, geen uitslag. Alleen de wedstrijd.'}
                 </span>
               </button>
             ) : (
@@ -855,7 +883,7 @@ export default function Player({ match, onBack }) {
                 onClick={() =>
                   track('youtube_uitgeweken', {
                     match_id: match.id,
-                    teams: `${match.teamA} - ${match.teamB}`,
+                    teams: teamsLabel(match),
                     stage: match.stage || null,
                   })
                 }

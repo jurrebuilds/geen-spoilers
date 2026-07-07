@@ -4,6 +4,7 @@ import {
   supabaseConfigured,
 } from './supabase.js'
 import { matches as localMatches } from '../data/matches.js'
+import { etappes as localEtappes } from '../data/etappes.js'
 
 // Databaserij (snake_case) -> appvorm (camelCase) die de rest van de app gebruikt
 export function fromRow(r) {
@@ -16,6 +17,14 @@ export function fromRow(r) {
     kickoff: r.kickoff,
     stage: r.stage ?? '',
     youtubeId: r.youtube_id ?? null,
+    // Tour de France-etappe of WK-wedstrijd. Valt terug op 'wk' zodat dit ook
+    // klopt zolang de sport-kolom nog niet in de database bestaat.
+    sport: r.sport ?? 'wk',
+    etappeNr: r.etappe_nr ?? null,
+    startPlaats: r.start_plaats ?? null,
+    finishPlaats: r.finish_plaats ?? null,
+    afstandKm: r.afstand_km ?? null,
+    etappeType: r.etappe_type ?? null,
     // Verrijking onder de video (mag ontbreken: dan tonen we die secties niet)
     venue: r.venue ?? null,
     city: r.city ?? null,
@@ -45,11 +54,14 @@ export function toRow(m) {
   }
 }
 
+// Wedstrijden + etappes samen, als Supabase niet is ingesteld of niet antwoordt
+const lokaleData = [...localMatches, ...localEtappes]
+
 // Laadt de wedstrijden uit Supabase via de REST-API (geen SDK nodig, scheelt
 // laadtijd). Valt terug op de lokale lijst als Supabase nog niet is ingesteld
 // of onbereikbaar is.
 export async function loadMatches() {
-  if (!supabaseConfigured) return localMatches
+  if (!supabaseConfigured) return lokaleData
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/matches?select=*&order=kickoff.asc`,
@@ -60,10 +72,10 @@ export async function loadMatches() {
         },
       },
     )
-    if (!res.ok) return localMatches
+    if (!res.ok) return lokaleData
     const data = await res.json()
-    return Array.isArray(data) && data.length ? data.map(fromRow) : localMatches
+    return Array.isArray(data) && data.length ? data.map(fromRow) : lokaleData
   } catch {
-    return localMatches
+    return lokaleData
   }
 }

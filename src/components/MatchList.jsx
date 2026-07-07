@@ -8,6 +8,7 @@ import {
   yesterdayKey,
 } from '../lib/format.js'
 import MatchCard from './MatchCard.jsx'
+import EtappeCard from './EtappeCard.jsx'
 import SteunKaart from './SteunKaart.jsx'
 
 function FilterChip({ active, label, onClick }) {
@@ -27,7 +28,7 @@ function FilterChip({ active, label, onClick }) {
   )
 }
 
-function DayHeading({ group, today, yesterday }) {
+function DayHeading({ group, today, yesterday, sport }) {
   const eyebrow =
     group.key === today
       ? 'Vandaag'
@@ -35,8 +36,21 @@ function DayHeading({ group, today, yesterday }) {
         ? 'Gisteren'
         : group.weekday
   const n = group.matches.length
+  const eenheid =
+    sport === 'tour'
+      ? n === 1
+        ? 'etappe'
+        : 'etappes'
+      : n === 1
+        ? 'wedstrijd'
+        : 'wedstrijden'
   return (
-    <div className="sticky top-[79px] z-10 flex items-end justify-between gap-3 bg-night/[0.92] px-[18px] pb-[9px] pt-[13px] backdrop-blur-[10px]">
+    // top volgt de gemeten headerhoogte (--header-h, gezet in App.jsx): met de
+    // sporttabs erbij is de header hoger dan de oude vaste 79px.
+    <div
+      className="sticky z-10 flex items-end justify-between gap-3 bg-night/[0.92] px-[18px] pb-[9px] pt-[13px] backdrop-blur-[10px]"
+      style={{ top: 'var(--header-h, 79px)' }}
+    >
       <div className="flex items-baseline gap-2.5">
         <span
           className={`text-[11px] font-bold uppercase tracking-[0.14em] ${
@@ -50,7 +64,7 @@ function DayHeading({ group, today, yesterday }) {
         </h2>
       </div>
       <span className="whitespace-nowrap text-[11px] font-medium tabular-nums text-moss-mid">
-        {n} {n === 1 ? 'wedstrijd' : 'wedstrijden'}
+        {n} {eenheid}
       </span>
     </div>
   )
@@ -63,7 +77,9 @@ export default function MatchList({
   onFiltersChange,
   gevolgd = [],
   onToggleVolg,
+  sport = 'wk',
 }) {
+  const isTour = sport === 'tour'
   const todayRef = useRef(null)
   const didScroll = useRef(false)
   // toon de zwevende knop zodra de sectie van vandaag uit beeld is
@@ -77,7 +93,9 @@ export default function MatchList({
   if (filters.onlyAvailable) {
     visible = visible.filter((m) => m.youtubeId)
   }
-  if (filters.oranje) {
+  // Het Oranje-filter bestaat alleen op de WK-lijst (de chip is daar ook
+  // alleen zichtbaar); op de Tour-lijst negeren we een blijven-hangen filter.
+  if (filters.oranje && !isTour) {
     visible = visible.filter(
       (m) => m.teamA === 'Nederland' || m.teamB === 'Nederland',
     )
@@ -123,11 +141,14 @@ export default function MatchList({
   // De inline uitlegkaart tonen we eenmalig op de eerstvolgende wedstrijd die
   // op zijn samenvatting wacht: bij voorkeur de oudste al-gespeelde zonder
   // samenvatting; is die er niet, dan de eerstvolgende komende wedstrijd.
+  // Bij het WK telt een wedstrijd pas mee als beide teams bekend zijn; een
+  // Tour-etappe is altijd vooraf bekend.
   const nu = Date.now()
+  const heeftInhoud = (m) => (m.sport === 'tour' ? true : Boolean(m.teamB))
   const eersteWachtende =
     visible.find(
-      (m) => m.teamB && !m.youtubeId && new Date(m.kickoff).getTime() < nu,
-    ) || visible.find((m) => m.teamB && !m.youtubeId)
+      (m) => heeftInhoud(m) && !m.youtubeId && new Date(m.kickoff).getTime() < nu,
+    ) || visible.find((m) => heeftInhoud(m) && !m.youtubeId)
   const eersteWachtendeId = eersteWachtende?.id ?? null
 
   useEffect(() => {
@@ -183,11 +204,13 @@ export default function MatchList({
             onFiltersChange({ ...filters, onlyAvailable: !filters.onlyAvailable })
           }
         />
-        <FilterChip
-          active={filters.oranje}
-          label="Oranje"
-          onClick={() => onFiltersChange({ ...filters, oranje: !filters.oranje })}
-        />
+        {!isTour && (
+          <FilterChip
+            active={filters.oranje}
+            label="Oranje"
+            onClick={() => onFiltersChange({ ...filters, oranje: !filters.oranje })}
+          />
+        )}
       </div>
 
       {groups.length === 0 && (
@@ -213,7 +236,9 @@ export default function MatchList({
               Niets te zien hier
             </p>
             <p className="mx-auto mt-[7px] max-w-60 text-[13.5px] leading-normal text-moss">
-              Geen wedstrijden met deze filters. Pas ze aan of bekijk weer alles.
+              {isTour
+                ? 'Geen etappes met deze filters. Pas ze aan of bekijk weer alles.'
+                : 'Geen wedstrijden met deze filters. Pas ze aan of bekijk weer alles.'}
             </p>
           </div>
           <button
@@ -231,22 +256,30 @@ export default function MatchList({
           <section
             key={group.key}
             ref={group.key === scrollKey ? todayRef : null}
-            className="scroll-mt-[79px]"
+            style={{ scrollMarginTop: 'var(--header-h, 79px)' }}
           >
-            <DayHeading group={group} today={today} yesterday={yesterday} />
+            <DayHeading
+              group={group}
+              today={today}
+              yesterday={yesterday}
+              sport={sport}
+            />
             <div className="flex flex-col gap-2 px-3.5 pb-3 pt-2">
-              {group.matches.map((match) => (
-                <Fragment key={match.id}>
-                  <MatchCard
-                    match={match}
-                    onOpen={onOpen}
-                    gevolgd={gevolgd.includes(match.id)}
-                    onToggleVolg={onToggleVolg}
-                    isEersteWachtende={match.id === eersteWachtendeId}
-                  />
-                  {match.id === steunKaartNaId && <SteunKaart />}
-                </Fragment>
-              ))}
+              {group.matches.map((match) => {
+                const Kaart = match.sport === 'tour' ? EtappeCard : MatchCard
+                return (
+                  <Fragment key={match.id}>
+                    <Kaart
+                      match={match}
+                      onOpen={onOpen}
+                      gevolgd={gevolgd.includes(match.id)}
+                      onToggleVolg={onToggleVolg}
+                      isEersteWachtende={match.id === eersteWachtendeId}
+                    />
+                    {match.id === steunKaartNaId && <SteunKaart />}
+                  </Fragment>
+                )
+              })}
             </div>
           </section>
         ))}

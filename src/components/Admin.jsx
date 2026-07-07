@@ -209,6 +209,8 @@ function Beheer({ sb, session }) {
 }
 
 function Rij({ sb, match }) {
+  // Tour-etappe: route staat vast, alleen het YouTube-ID is te bewerken
+  const isTour = match.sport === 'tour'
   const [waarden, setWaarden] = useState({
     teamA: match.teamA,
     teamB: match.teamB,
@@ -228,17 +230,20 @@ function Rij({ sb, match }) {
 
   const opslaan = async () => {
     setStatus('bezig')
-    const { error } = await sb
-      .from('matches')
-      .update({
-        team_a: waarden.teamA,
-        team_b: waarden.teamB,
-        flag_a: waarden.flagA,
-        flag_b: waarden.flagB,
-        youtube_id: waarden.youtubeId.trim() || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', match.id)
+    const update = isTour
+      ? {
+          youtube_id: waarden.youtubeId.trim() || null,
+          updated_at: new Date().toISOString(),
+        }
+      : {
+          team_a: waarden.teamA,
+          team_b: waarden.teamB,
+          flag_a: waarden.flagA,
+          flag_b: waarden.flagB,
+          youtube_id: waarden.youtubeId.trim() || null,
+          updated_at: new Date().toISOString(),
+        }
+    const { error } = await sb.from('matches').update(update).eq('id', match.id)
     setStatus(error ? 'fout' : 'klaar')
   }
 
@@ -251,12 +256,18 @@ function Rij({ sb, match }) {
         {match.stage} · {dayLabel(match.kickoff)}, {kickoffTime(match.kickoff)}
       </p>
 
-      <div className="mt-2 grid grid-cols-[2.5rem_1fr] gap-2">
-        <input {...veld('flagA')} placeholder="🇳🇱" className={klein} />
-        <input {...veld('teamA')} placeholder="Team A" className={klein} />
-        <input {...veld('flagB')} placeholder="🇺🇿" className={klein} />
-        <input {...veld('teamB')} placeholder="Team B" className={klein} />
-      </div>
+      {isTour ? (
+        <p className="mt-2 text-sm font-semibold text-cream">
+          Etappe {match.etappeNr} · {match.startPlaats} – {match.finishPlaats}
+        </p>
+      ) : (
+        <div className="mt-2 grid grid-cols-[2.5rem_1fr] gap-2">
+          <input {...veld('flagA')} placeholder="🇳🇱" className={klein} />
+          <input {...veld('teamA')} placeholder="Team A" className={klein} />
+          <input {...veld('flagB')} placeholder="🇺🇿" className={klein} />
+          <input {...veld('teamB')} placeholder="Team B" className={klein} />
+        </div>
+      )}
 
       <div className="mt-2">
         <label className="block">

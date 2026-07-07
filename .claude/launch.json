@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["vite"],
       "port": 5173
+    },
+    {
+      "name": "spoilervrij-tour",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["VITE_TOUR=1", "VITE_SUPABASE_URL=", "npx", "vite"],
+      "port": 5173
     }
   ]
 }

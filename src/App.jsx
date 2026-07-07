@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { loadMatches } from './lib/matchesData.js'
 import {
   registerServiceWorker,
@@ -41,6 +41,61 @@ function isAdminRoute(hash, search) {
 function matchIdUitHash(hash) {
   return hash.match(/^#wedstrijd\/([\w-]+)/)?.[1] ?? null
 }
+
+// Sporttabs (WK | Tour de France) staan aan zodra VITE_TOUR is gezet (bijv.
+// '1' in Vercel). Zonder vlag gedraagt de app zich exact als voorheen: alleen
+// het WK, geen tabs. Tour-rijen in de database blijven dan onzichtbaar.
+const TOUR_AAN = Boolean(import.meta.env.VITE_TOUR)
+
+// Eén tab in de sportwissel bovenin de header
+function SportTab({ actief, onClick, icoon, label }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={actief}
+      onClick={onClick}
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-[7px] text-[12.5px] font-bold transition-colors duration-150 ${
+        actief ? 'bg-oranje text-night' : 'text-moss hover:text-cream'
+      }`}
+    >
+      {icoon}
+      {label}
+    </button>
+  )
+}
+
+const balIcoon = (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    className="fill-none stroke-current"
+    strokeWidth="1.8"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 8l3.8 2.76-1.45 4.48h-4.7L8.2 10.76z" />
+  </svg>
+)
+
+const fietsIcoon = (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    className="fill-none stroke-current"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="5.5" cy="17.5" r="3.2" />
+    <circle cx="18.5" cy="17.5" r="3.2" />
+    <path d="M5.5 17.5 9 10h6.5M12 17.5 9 10M15.5 10l3 7.5M14 6.5h3" />
+  </svg>
+)
 
 function Logo() {
   // Merkteken: oog met voetbal als pupil, zie ook public/favicon.svg
@@ -136,6 +191,40 @@ export default function App() {
   const [gevolgd, setGevolgd] = useState(() => gevolgdeMatches())
   const [filters, setFilters] = useState({ onlyAvailable: false, oranje: false })
 
+  // Actieve sporttab volgt de hash: #tour = Tour, anders WK. Zo werken
+  // deeplinks (bijv. vanuit een pushmelding) en overleeft de keuze een refresh.
+  const sport = TOUR_AAN && route.startsWith('#tour') ? 'tour' : 'wk'
+  const kiesSport = (s) => {
+    if (s === sport) return
+    const basis = window.location.pathname + window.location.search
+    // replaceState i.p.v. hash-toewijzing: geen extra stap in de historie en
+    // geen schermsprong; hashchange vuurt dan niet, dus route zelf bijwerken.
+    window.history.replaceState(null, '', s === 'tour' ? `${basis}#tour` : basis)
+    setRoute(window.location.hash)
+    track('sport_gewisseld', { sport: s })
+  }
+
+  // De dagkoppen en de spring-naar-vandaag-scroll moeten precies onder de
+  // header uitkomen. Die hoogte varieert (safe-area, sporttabs), dus meten we
+  // hem en geven hem door als CSS-variabele (--header-h, zie MatchList).
+  const adminActief = isAdminRoute(route, window.location.search)
+  const headerRef = useRef(null)
+  useEffect(() => {
+    // afhankelijk van adminActief: komt iemand van #admin terug naar de app,
+    // dan wordt de header opnieuw gemount en moet de meting opnieuw starten
+    const el = headerRef.current
+    if (!el) return
+    const zet = () =>
+      document.documentElement.style.setProperty(
+        '--header-h',
+        `${el.offsetHeight}px`,
+      )
+    zet()
+    const ro = new ResizeObserver(zet)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [adminActief])
+
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash)
     window.addEventListener('hashchange', onHash)
@@ -186,10 +275,11 @@ export default function App() {
     }
   }, [route, matches])
 
-  // Compacte, spoilervrije event-props: nooit een uitslag, alleen wie en welke ronde.
+  // Compacte, spoilervrije event-props: nooit een uitslag, alleen wie en welke
+  // ronde. Bij een Tour-etappe is teamA de leesbare naam ("Etappe 5").
   const matchProps = (match) => ({
     match_id: match.id,
-    teams: `${match.teamA} - ${match.teamB}`,
+    teams: match.teamB ? `${match.teamA} - ${match.teamB}` : match.teamA,
     stage: match.stage || null,
   })
 
@@ -264,7 +354,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [overlayOpen, contactFase, meldingenFase])
 
-  if (isAdminRoute(route, window.location.search)) {
+  if (adminActief) {
     return (
       <Suspense
         fallback={<div className="min-h-dvh bg-night" aria-hidden="true" />}
@@ -280,20 +370,47 @@ export default function App() {
         aria-hidden={overlayOpen ? true : undefined}
         className="mx-auto max-w-md pb-[92px]"
       >
-        {/* Titelbalk blijft altijd in beeld; dagkoppen plakken eronder. */}
+        {/* Titelbalk blijft altijd in beeld; dagkoppen plakken eronder.
+            Met VITE_TOUR komt de sportwissel (WK | Tour) hier ook in, zodat hij
+            zichtbaar blijft terwijl de lijst naar de nieuwste samenvatting springt. */}
         <header
-          className="sticky top-0 z-30 flex items-center gap-3 border-b border-line/40 bg-night/85 px-[18px] pb-3.5 backdrop-blur-lg"
+          ref={headerRef}
+          className="sticky top-0 z-30 border-b border-line/40 bg-night/85 px-[18px] pb-3.5 backdrop-blur-lg"
           style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))' }}
         >
-          <Logo />
-          <div className="min-w-0">
-            <h1 className="text-[23px] font-extrabold leading-none tracking-[-0.025em]">
-              Geen <span className="text-oranje">Spoilers</span>
-            </h1>
-            <p className="mt-[5px] truncate text-[12.5px] font-medium leading-tight text-moss">
-              Kijk alle WK-wedstrijden terug zonder spoilers
-            </p>
+          <div className="flex items-center gap-3">
+            <Logo />
+            <div className="min-w-0">
+              <h1 className="text-[23px] font-extrabold leading-none tracking-[-0.025em]">
+                Geen <span className="text-oranje">Spoilers</span>
+              </h1>
+              <p className="mt-[5px] truncate text-[12.5px] font-medium leading-tight text-moss">
+                {sport === 'tour'
+                  ? 'Kijk alle Tour-etappes terug zonder spoilers'
+                  : 'Kijk alle WK-wedstrijden terug zonder spoilers'}
+              </p>
+            </div>
           </div>
+          {TOUR_AAN && (
+            <div
+              role="tablist"
+              aria-label="Kies een sport"
+              className="mt-3 flex gap-1 rounded-full border border-line bg-pitch p-[3px]"
+            >
+              <SportTab
+                actief={sport === 'wk'}
+                onClick={() => kiesSport('wk')}
+                icoon={balIcoon}
+                label="WK 2026"
+              />
+              <SportTab
+                actief={sport === 'tour'}
+                onClick={() => kiesSport('tour')}
+                icoon={fietsIcoon}
+                label="Tour de France"
+              />
+            </div>
+          )}
         </header>
 
         <main>
@@ -301,8 +418,16 @@ export default function App() {
             <ListSkeleton />
           ) : (
             <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
+              {/* key={sport}: bij een tabwissel opnieuw mounten, zodat de lijst
+                  vers naar zijn eigen nieuwste samenvatting springt. De
+                  WK-lijst filtert Tour-rijen onvoorwaardelijk weg — ook
+                  zonder VITE_TOUR blijven geseedde etappes dus onzichtbaar. */}
               <MatchList
-                matches={matches}
+                key={sport}
+                sport={sport}
+                matches={matches.filter((m) =>
+                  sport === 'tour' ? m.sport === 'tour' : m.sport !== 'tour',
+                )}
                 onOpen={openMatch}
                 filters={filters}
                 onFiltersChange={setFilters}
@@ -338,6 +463,17 @@ export default function App() {
                   </svg>
                   Alle wedstrijden
                 </a>
+                {/* Stille ingang naar de crawlbare etappepagina's */}
+                {TOUR_AAN && (
+                  <a
+                    href="/tour/"
+                    onClick={() => track('alle_etappes_geklikt')}
+                    className="flex items-center gap-2 text-[13.5px] font-semibold text-moss transition-colors duration-150 hover:text-cream"
+                  >
+                    {fietsIcoon}
+                    Tour de France
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={() => {

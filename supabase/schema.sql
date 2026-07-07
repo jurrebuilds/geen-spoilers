@@ -40,6 +40,18 @@ alter table public.matches add column if not exists photo_credit         text;  
 -- "Te melden" = youtube_id is gevuld én summary_notified_at is nog leeg.
 alter table public.matches add column if not exists summary_notified_at  timestamptz;
 
+-- ── Tour de France (etappes in dezelfde tabel) ──────────────────────────
+-- Eén keer extra uitvoeren voegt deze kolommen toe. Etappes zijn rijen met
+-- sport = 'tour'; alle bestaande WK-rijen krijgen automatisch sport = 'wk'.
+-- Puur additief: bestaande code die deze kolommen niet kent blijft werken.
+alter table public.matches add column if not exists sport         text not null default 'wk';
+alter table public.matches add column if not exists etappe_nr     integer;
+alter table public.matches add column if not exists start_plaats  text;
+alter table public.matches add column if not exists finish_plaats text;
+alter table public.matches add column if not exists afstand_km    numeric;
+alter table public.matches add column if not exists etappe_type   text; -- 'vlak' | 'heuvelachtig' | 'bergen' | 'tijdrit' | 'ploegentijdrit'
+create index if not exists matches_sport_idx on public.matches (sport);
+
 -- Beveiliging aanzetten: standaard mag niemand iets
 alter table public.matches enable row level security;
 

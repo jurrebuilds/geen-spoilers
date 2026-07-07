@@ -37,11 +37,21 @@ webpush.setVapidDetails(
 const headers = { apikey: key, Authorization: `Bearer ${key}` }
 
 async function main() {
-  // 1. Wedstrijden met een samenvatting die nog niet gemeld is
-  const res = await fetch(
-    `${base}/rest/v1/matches?select=id,team_a,team_b&youtube_id=not.is.null&summary_notified_at=is.null`,
+  // 1. Wedstrijden/etappes met een samenvatting die nog niet gemeld is.
+  // Bestaan de Tour-kolommen nog niet (migratie nog niet gedraaid), dan geeft
+  // PostgREST een fout; val dan terug op de oude selectie zodat WK-meldingen
+  // nooit stil komen te liggen.
+  const filter = 'youtube_id=not.is.null&summary_notified_at=is.null'
+  let res = await fetch(
+    `${base}/rest/v1/matches?select=id,team_a,team_b,sport,etappe_nr,finish_plaats&${filter}`,
     { headers },
   )
+  if (!res.ok) {
+    res = await fetch(
+      `${base}/rest/v1/matches?select=id,team_a,team_b&${filter}`,
+      { headers },
+    )
+  }
   if (!res.ok) throw new Error(`matches gaf ${res.status}`)
   const teMelden = await res.json()
   if (teMelden.length === 0) {
@@ -69,11 +79,16 @@ async function main() {
   }
 
   for (const m of teMelden) {
-    const naam = `${m.team_a} – ${m.team_b}`
+    // SPOILERVEILIG: bij een etappe alleen nummer en finishplaats (vooraf
+    // bekend), nooit een winnaar of klassement.
+    const naam =
+      m.sport === 'tour'
+        ? `etappe ${m.etappe_nr}${m.finish_plaats ? ` naar ${m.finish_plaats}` : ''}`
+        : `${m.team_a} – ${m.team_b}`
     const payload = JSON.stringify({
       title: 'Nieuwe samenvatting',
       body: `De samenvatting van ${naam} staat klaar 👀`,
-      url: '/',
+      url: m.sport === 'tour' ? '/#tour' : '/',
       tag: `samenvatting-${m.id}`,
     })
 
