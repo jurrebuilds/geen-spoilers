@@ -27,7 +27,8 @@ function TeamRow({ name, available }) {
 // Belletje op een wedstrijd zonder samenvatting: tik = volgen. Uit = grijze
 // omtrek, aan = oranje gevuld. Vervangt het oude "nog niet beschikbaar"-klokje:
 // wachten doe je nu actief, met een seintje zodra de samenvatting klaarstaat.
-function BelKnop({ gevolgd, onClick }) {
+// Geëxporteerd: EtappeCard gebruikt hetzelfde belletje.
+export function BelKnop({ gevolgd, onClick }) {
   return (
     <button
       type="button"

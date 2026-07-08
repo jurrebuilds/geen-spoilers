@@ -20,6 +20,7 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises'
 import { dayLabel, kickoffTime } from '../src/lib/format.js'
 import { slugify, groupLetter } from '../src/lib/slug.js'
+import { etappeTypeLabel, afstandLabel } from '../src/lib/tour.js'
 
 const SITE = 'https://geenspoilers.nl'
 const DIST = new URL('../dist/', import.meta.url)
@@ -41,6 +42,13 @@ const fromRow = (r) => ({
   windKmh: r.wind_kmh ?? null,
   weatherCode: r.weather_code ?? null,
   lineup: r.lineup ?? null,
+  // Tour de France (sport valt terug op 'wk' zolang de migratie niet draaide)
+  sport: r.sport ?? 'wk',
+  etappeNr: r.etappe_nr ?? null,
+  startPlaats: r.start_plaats ?? null,
+  finishPlaats: r.finish_plaats ?? null,
+  afstandKm: r.afstand_km ?? null,
+  etappeType: r.etappe_type ?? null,
 })
 
 async function loadMatches() {
@@ -68,8 +76,11 @@ async function loadMatches() {
     }
   }
   const { matches } = await import('../src/data/matches.js')
-  console.log(`SEO: ${matches.length} wedstrijden uit src/data/matches.js.`)
-  return matches
+  const { etappes } = await import('../src/data/etappes.js')
+  console.log(
+    `SEO: ${matches.length} wedstrijden + ${etappes.length} etappes uit src/data/.`,
+  )
+  return [...matches, ...etappes]
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -91,6 +102,8 @@ const matchPath = (m) => `/wedstrijd/${m.id}/`
 const teamPath = (naam) => `/team/${slugify(naam)}/`
 const groepPath = (letter) => `/groep/${letter}/`
 const rondePath = (stage) => `/ronde/${slugify(stage)}/`
+const etappePath = (e) => `/etappe/${e.etappeNr}/`
+const TOUR_PATH = '/tour/'
 
 // WMO-weercode naar Nederlandse omschrijving (gelijk aan de speler).
 function weatherLabel(code) {
@@ -151,7 +164,7 @@ function breadcrumbLd(items) {
 
 let CSS_HREF = '/assets/index.css'
 
-function layout({ title, description, path, breadcrumb = [], jsonLd = [], heading, lead, bodyHtml }) {
+function layout({ title, description, path, breadcrumb = [], jsonLd = [], heading, lead, bodyHtml, footerLink = { href: '/wedstrijden/', label: 'Alle wedstrijden' } }) {
   const canonical = SITE + path
   const ld = [...(breadcrumb.length ? [breadcrumbLd(breadcrumb)] : []), ...jsonLd]
   const ldJson = ld.length ? JSON.stringify(ld.length === 1 ? ld[0] : ld) : ''
@@ -196,7 +209,7 @@ function layout({ title, description, path, breadcrumb = [], jsonLd = [], headin
           ${bodyHtml}
         </main>
         <footer class="mt-12 border-t border-line/40 pt-5 text-center">
-          <a href="/wedstrijden/" class="text-[13px] font-semibold text-moss underline decoration-line underline-offset-4 hover:text-cream">Alle wedstrijden</a>
+          <a href="${footerLink.href}" class="text-[13px] font-semibold text-moss underline decoration-line underline-offset-4 hover:text-cream">${esc(footerLink.label)}</a>
           <p class="mt-3 text-[11.5px] leading-normal text-moss-dim">Samenvattingen via NOS Sport. Spoilervrij: geen uitslagen, geen titels.</p>
         </footer>
       </div>
@@ -457,6 +470,138 @@ function rondePage(stage, list) {
   })
 }
 
+// ── Tour de France ──────────────────────────────────────────────────────
+// SPOILERVRIJ: alleen vooraf bekende feiten (route, afstand, type, datum).
+// Nooit een winnaar, uitslag of klassement.
+function etappeRegel(e) {
+  const titel = `Etappe ${e.etappeNr}: ${e.startPlaats} – ${e.finishPlaats}`
+  const rechts = e.youtubeId ? 'Samenvatting ✓' : 'Nog niet beschikbaar'
+  const sub = [dayLabel(e.kickoff), etappeTypeLabel(e.etappeType), afstandLabel(e.afstandKm)]
+    .filter(Boolean)
+    .join(' · ')
+  return `<a href="${etappePath(e)}"><div class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-pitch px-4 py-3 transition-colors hover:border-line-strong"><span class="min-w-0"><span class="block truncate text-[14.5px] font-bold text-cream">${esc(titel)}</span><span class="mt-0.5 block text-[12px] font-medium text-moss">${esc(sub)}</span></span><span class="flex-none text-[11.5px] font-semibold ${e.youtubeId ? 'text-oranje' : 'text-moss-dim'}">${esc(rechts)}</span></div></a>`
+}
+
+function etappePage(e) {
+  const naam = `Etappe ${e.etappeNr}: ${e.startPlaats} – ${e.finishPlaats}`
+  const type = etappeTypeLabel(e.etappeType)
+  const breadcrumb = [
+    { name: 'Tour de France', path: TOUR_PATH },
+    { name: `Etappe ${e.etappeNr}`, path: etappePath(e) },
+  ]
+
+  const body = []
+  body.push(
+    `<p class="mt-6 text-[14px] leading-relaxed text-moss">Bekijk etappe ${e.etappeNr} van de Tour de France 2026, van ${esc(e.startPlaats)} naar ${esc(e.finishPlaats)}, rustig terug zonder de uitslag al te kennen. Geen Spoilers verbergt winnaars, klassementen en verklappende titels, zodat je de samenvatting kunt kijken alsof de etappe nog moet beginnen.</p>`,
+  )
+  body.push(
+    feiten([
+      ['Wanneer', dayLabel(e.kickoff)],
+      ['Route', `${e.startPlaats} – ${e.finishPlaats}`],
+      ['Type', type],
+      ['Afstand', afstandLabel(e.afstandKm)],
+      ['Samenvatting', e.youtubeId ? 'Beschikbaar' : 'Nog niet beschikbaar'],
+    ]),
+  )
+  body.push(
+    `<a href="/#wedstrijd/${e.id}" class="mt-6 flex items-center justify-center rounded-full bg-oranje px-5 py-3 text-[15px] font-bold text-night transition-transform duration-150 active:scale-95">Bekijk spoilervrij in de app</a>`,
+  )
+  body.push(
+    `<p class="mt-9 text-[13px] leading-relaxed text-moss">Meer terugkijken: <a href="${TOUR_PATH}" class="text-cream underline decoration-line underline-offset-2 hover:text-oranje">alle etappes van de Tour de France 2026</a></p>`,
+  )
+
+  const { html: faqHtml, ld: faqLd } = faqBlock([
+    {
+      q: `Kan ik etappe ${e.etappeNr} van de Tour 2026 terugkijken zonder de uitslag te zien?`,
+      a: `Ja. Je bekijkt de samenvatting van etappe ${e.etappeNr} (${e.startPlaats} – ${e.finishPlaats}) spoilervrij — zonder winnaar, klassement of verklappende titel.`,
+    },
+    {
+      q: `Wanneer wordt etappe ${e.etappeNr} verreden?`,
+      a: `${dayLabel(e.kickoff)}, van ${e.startPlaats} naar ${e.finishPlaats} (${type.toLowerCase()}, ${afstandLabel(e.afstandKm)}).`,
+    },
+    {
+      q: `Is de samenvatting van etappe ${e.etappeNr} al beschikbaar?`,
+      a: e.youtubeId
+        ? `Ja, de samenvatting staat klaar en is hier spoilervrij terug te kijken.`
+        : `Nog niet; zodra NOS Sport de samenvatting plaatst (meestal op de avond van de etappe) verschijnt die hier vanzelf, spoilervrij.`,
+    },
+  ])
+  body.push(faqHtml)
+
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `Tour de France 2026 · ${naam}`,
+    sport: 'Wielrennen',
+    image: [`${SITE}/og-image.png`],
+    startDate: e.kickoff,
+    // ruwe duur van een etappe; onthult niets, maakt alleen het schema compleet
+    endDate: new Date(new Date(e.kickoff).getTime() + 5 * 60 * 60 * 1000).toISOString(),
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    url: SITE + etappePath(e),
+    description: `Samenvatting van etappe ${e.etappeNr} van de Tour de France 2026 (${e.startPlaats} – ${e.finishPlaats}) spoilervrij terugkijken.`,
+    organizer: {
+      '@type': 'Organization',
+      name: 'Amaury Sport Organisation',
+      url: 'https://www.letour.fr/',
+    },
+    location: { '@type': 'Place', name: e.finishPlaats },
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'EUR',
+      availability: 'https://schema.org/InStock',
+      url: SITE + etappePath(e),
+      validFrom: e.kickoff,
+    },
+  }
+
+  return layout({
+    title: `${naam} terugkijken · Tour de France 2026 | Geen Spoilers`,
+    description: `Kijk etappe ${e.etappeNr} van de Tour de France 2026 (${e.startPlaats} – ${e.finishPlaats}) spoilervrij terug. Geen winnaar, geen klassement — alleen de samenvatting.`,
+    path: etappePath(e),
+    breadcrumb,
+    jsonLd: faqLd ? [ld, faqLd] : [ld],
+    heading: naam,
+    lead: `${type} · ${afstandLabel(e.afstandKm)} · ${dayLabel(e.kickoff)}`,
+    bodyHtml: body.join('\n'),
+    footerLink: { href: TOUR_PATH, label: 'Alle etappes' },
+  })
+}
+
+function tourIndexPage(list) {
+  const intro = `<p class="mt-6 text-[14px] leading-relaxed text-moss">Kijk alle ${list.length} etappes van de Tour de France 2026 terug zonder dat de uitslag je voor is. Geen Spoilers verbergt winnaars, klassementen en verklappende videotitels — je ziet alleen de route en de samenvatting.</p>`
+  const { html: faqHtml, ld: faqLd } = faqBlock([
+    {
+      q: 'Hoe kijk ik een Tour-etappe spoilervrij terug?',
+      a: 'Je kiest een etappe en bekijkt de NOS-samenvatting zonder dat winnaar of klassement ergens in beeld komt. Geen Spoilers verbergt verklappende titels en aanbevolen video’s.',
+    },
+    {
+      q: 'Zie ik nergens de winnaar of het klassement?',
+      a: 'Klopt. Geen Spoilers toont geen uitslagen en geen klassementen — alleen de vooraf bekende route, afstand en het etappetype.',
+    },
+    {
+      q: 'Wanneer staat de samenvatting van een etappe klaar?',
+      a: 'Meestal op de avond van de etappe zelf, zodra NOS Sport de samenvatting plaatst. Volg een etappe met de bel en je krijgt vanzelf een seintje.',
+    },
+  ])
+  return layout({
+    title: 'Tour de France 2026 spoilervrij terugkijken | Geen Spoilers',
+    description: `Alle ${list.length} etappes van de Tour de France 2026 spoilervrij terugkijken — zonder winnaars of klassementen. Alleen de samenvattingen.`,
+    path: TOUR_PATH,
+    breadcrumb: [{ name: 'Tour de France', path: TOUR_PATH }],
+    jsonLd: faqLd ? [faqLd] : [],
+    heading: 'Tour de France 2026',
+    lead: `${list.length} etappes · 4 t/m 26 juli`,
+    bodyHtml:
+      intro +
+      `<div class="mt-5 flex flex-col gap-2">${list.map(etappeRegel).join('')}</div>` +
+      faqHtml,
+    footerLink: { href: TOUR_PATH, label: 'Alle etappes' },
+  })
+}
+
 function indexPage({ groepen, rondes, teams, totaal }) {
   const sectie = (titel, linksHtml) =>
     `<h2 class="mt-9 text-[15px] font-bold uppercase tracking-[0.14em] text-moss-soft">${esc(titel)}</h2><div class="mt-3 flex flex-wrap gap-2">${linksHtml}</div>`
@@ -535,7 +680,15 @@ async function vindCssHref() {
 
 async function main() {
   CSS_HREF = await vindCssHref()
-  const matches = await loadMatches()
+  const alle = await loadMatches()
+
+  // Eerst splitsen op sport: zonder deze splitsing zou een Tour-rij (stage
+  // 'Tour de France', geen groepsletter) een onzinnige /ronde/tour-de-france/
+  // opleveren en de WK-lijsten vervuilen. WK-pagina's blijven zo exact gelijk.
+  const tourEtappes = alle
+    .filter((m) => m.sport === 'tour')
+    .sort((a, b) => (a.etappeNr ?? 0) - (b.etappeNr ?? 0))
+  const matches = alle.filter((m) => m.sport !== 'tour')
 
   const echte = matches.filter(heeftTeams)
 
@@ -610,13 +763,24 @@ async function main() {
   )
   onthoud('/wedstrijden/')
 
+  // Tour de France: per etappe een pagina + een overzicht op /tour/.
+  // Alleen als er etappes in de data staan (na de seed), anders niets.
+  for (const e of tourEtappes) {
+    await writePage(etappePath(e), etappePage(e))
+    onthoud(etappePath(e))
+  }
+  if (tourEtappes.length) {
+    await writePage(TOUR_PATH, tourIndexPage(tourEtappes))
+    onthoud(TOUR_PATH)
+  }
+
   // sitemap.xml (homepage eerst) + robots.txt
   const datum = new Date().toISOString().slice(0, 10)
-  const alle = [SITE + '/', ...urls]
+  const alleUrls = [SITE + '/', ...urls]
   const sitemap =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    alle
+    alleUrls
       .map((u) => `  <url><loc>${u}</loc><lastmod>${datum}</lastmod></url>`)
       .join('\n') +
     `\n</urlset>\n`
@@ -626,7 +790,7 @@ async function main() {
   await writeFile(new URL('robots.txt', DIST), robots)
 
   console.log(
-    `SEO klaar: ${echte.length} wedstrijden, ${teams.length} teams, ${groepen.length} groepen, ${rondes.length} rondes + index, sitemap (${alle.length} urls) en robots.txt.`,
+    `SEO klaar: ${echte.length} wedstrijden, ${teams.length} teams, ${groepen.length} groepen, ${rondes.length} rondes, ${tourEtappes.length} etappes + index, sitemap (${urls.length + 1} urls) en robots.txt.`,
   )
 }
 

@@ -19,6 +19,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 
 const MATCHES_URL = new URL('../src/data/matches.js', import.meta.url)
+const ETAPPES_URL = new URL('../src/data/etappes.js', import.meta.url)
 const DB_MODE = Boolean(
   process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY,
 )
@@ -26,11 +27,18 @@ const DB_MODE = Boolean(
 // Bronnen: kanaalfeed van NOS Sport + WK2026-playlist. Feeds tonen alleen
 // de ~15 nieuwste video's, dus draai dit script regelmatig (elke ochtend
 // of gewoon via npm run dev). SPOILERVRIJ_FEEDS overschrijft (voor tests).
+// SPOILERVRIJ_TOUR_PLAYLIST voegt optioneel de NOS Tour-playlist toe: tijdens
+// de WK/Tour-overlap kan een etappevideo binnen uren uit de kanaalfeed draaien.
 const FEEDS = process.env.SPOILERVRIJ_FEEDS
   ? process.env.SPOILERVRIJ_FEEDS.split(',')
   : [
       'https://www.youtube.com/feeds/videos.xml?channel_id=UCT4oPufBQa0f6C67Fw_HXNg',
       'https://www.youtube.com/feeds/videos.xml?playlist_id=PLnJJ42LOJsdFm1NIMUr_jjZFvvJ29NIUb',
+      ...(process.env.SPOILERVRIJ_TOUR_PLAYLIST
+        ? [
+            `https://www.youtube.com/feeds/videos.xml?playlist_id=${process.env.SPOILERVRIJ_TOUR_PLAYLIST}`,
+          ]
+        : []),
     ]
 
 // Alternatieve schrijfwijzen die NOS weleens gebruikt. Aliassen worden door
@@ -108,6 +116,28 @@ function lijktSamenvatting(titel) {
   return titel.includes('samenvatting') || /\|\s*wk\s?2026\b/.test(titel)
 }
 
+// Herkent de NOS-samenvatting van één specifieke Tour-etappe. NOS titelt die
+// in 2026 als "Highlights etappe 4 ... | Tour de France 2026" (geverifieerd in
+// de kanaalfeed); "samenvatting" accepteren we ook, voor als ze wisselen.
+// De \b om het nummer is essentieel: "etappe 1" is een substring van
+// "etappe 15" en zou anders de verkeerde video aan een etappe koppelen.
+// Praatprogramma's als "De Avondetappe" vallen af doordat het sleutelwoord
+// verplicht is én \betappe niet matcht binnen "avondetappe". Vrouwen-etappes
+// (Tour de France Femmes, vanaf 1 augustus) sluiten we expliciet uit, net als
+// titels die een winnaar verklappen — NOS zet die woorden nooit in een
+// samenvattingstitel, dus dit kost geen echte treffers.
+function lijktEtappeSamenvatting(titel, etappeNr) {
+  if (/\blive\b/.test(titel)) return false
+  if (!titel.includes('samenvatting') && !titel.includes('highlights')) {
+    return false
+  }
+  if (/\bvrouwen\b|\bfemmes\b/.test(titel)) return false
+  if (/\bwint\b|\bwinnaar\b|\bzege\b/.test(titel)) return false
+  return (
+    new RegExp(`\\betappe ${etappeNr}\\b`).test(titel) && /\btour\b/.test(titel)
+  )
+}
+
 // oEmbed-info (of null als de video niet afspeelbaar/embedbaar is). Geeft o.a.
 // author_name terug, zodat we bij de zoek-fallback kunnen eisen dat de video
 // echt van NOS is — de RSS-feed is dat per definitie, zoekresultaten niet.
@@ -136,7 +166,11 @@ function isNos(info) {
 // FIFA-clips en niet-NOS video's (vaak mét de stand in de titel) bovenaan en
 // staat de NOS-samenvatting buiten beeld.
 async function zoekKandidaten(wedstrijd) {
-  const q = `NOS samenvatting ${wedstrijd.teamA} ${wedstrijd.teamB} WK2026`
+  // Tour: NOS noemt etappesamenvattingen "Highlights", dus zo zoeken we ook
+  const q =
+    wedstrijd.sport === 'tour'
+      ? `NOS highlights etappe ${wedstrijd.etappeNr} Tour de France 2026`
+      : `NOS samenvatting ${wedstrijd.teamA} ${wedstrijd.teamB} WK2026`
   const url =
     'https://www.youtube.com/results?search_query=' + encodeURIComponent(q)
   let html
@@ -177,13 +211,16 @@ function vulIn(bron, matchId, veld, videoId) {
   return regels.join('\n')
 }
 
-// Databaserij -> appvorm (inline, zodat dit script geen frontend-modules laadt)
+// Databaserij -> appvorm (inline, zodat dit script geen frontend-modules laadt).
+// sport valt terug op 'wk' zodat dit ook klopt vóór de Tour-migratie.
 const fromRow = (r) => ({
   id: r.id,
   teamA: r.team_a,
   teamB: r.team_b ?? '',
   kickoff: r.kickoff,
   youtubeId: r.youtube_id ?? null,
+  sport: r.sport ?? 'wk',
+  etappeNr: r.etappe_nr ?? null,
 })
 
 // De opslag verschilt per modus, de zoeklogica eronder is identiek.
@@ -223,23 +260,33 @@ async function maakOpslag() {
     }
   }
 
-  // Bestandsmodus
-  let bron = await readFile(MATCHES_URL, 'utf8')
-  let gewijzigd = false
+  // Bestandsmodus: wedstrijden én etappes, elk in hun eigen databestand.
+  // vul() probeert beide bronnen; alleen gewijzigde bestanden worden geschreven.
+  const bestanden = [
+    { url: MATCHES_URL, bron: await readFile(MATCHES_URL, 'utf8'), gewijzigd: false },
+    { url: ETAPPES_URL, bron: await readFile(ETAPPES_URL, 'utf8'), gewijzigd: false },
+  ]
   return {
     async getMatches() {
       const { matches } = await import(MATCHES_URL.href)
-      return matches
+      const { etappes } = await import(ETAPPES_URL.href)
+      return [...matches, ...etappes]
     },
     async vul(matchId, veld, videoId) {
-      const nieuw = vulIn(bron, matchId, veld, videoId)
-      if (!nieuw) return false
-      bron = nieuw
-      gewijzigd = true
-      return true
+      for (const bestand of bestanden) {
+        const nieuw = vulIn(bestand.bron, matchId, veld, videoId)
+        if (nieuw) {
+          bestand.bron = nieuw
+          bestand.gewijzigd = true
+          return true
+        }
+      }
+      return false
     },
     async klaar() {
-      if (gewijzigd) await writeFile(MATCHES_URL, bron)
+      for (const bestand of bestanden) {
+        if (bestand.gewijzigd) await writeFile(bestand.url, bestand.bron)
+      }
     },
   }
 }
@@ -248,8 +295,13 @@ async function main() {
   const opslag = await maakOpslag()
   const matches = await opslag.getMatches()
   const nu = Date.now()
+  // WK: pas checken als beide teams bekend zijn. Tour: elke etappe is vooraf
+  // bekend, dus alleen het etappenummer is vereist. De etappesamenvatting
+  // verschijnt pas 's avonds; de cron probeert het gewoon elke run opnieuw.
+  const speelbaar = (m) =>
+    m.sport === 'tour' ? Boolean(m.etappeNr) : Boolean(m.teamB)
   const teChecken = matches.filter(
-    (m) => m.teamB && new Date(m.kickoff).getTime() < nu && !m.youtubeId,
+    (m) => speelbaar(m) && new Date(m.kickoff).getTime() < nu && !m.youtubeId,
   )
 
   if (teChecken.length === 0) {
@@ -278,10 +330,18 @@ async function main() {
   let toegevoegd = 0
 
   for (const wedstrijd of teChecken) {
-    const naam = `${wedstrijd.teamA} – ${wedstrijd.teamB}`
+    const isTour = wedstrijd.sport === 'tour'
+    // teamA is bij een etappe de leesbare naam ("Etappe 5")
+    const naam = isTour
+      ? `${wedstrijd.teamA} (Tour)`
+      : `${wedstrijd.teamA} – ${wedstrijd.teamB}`
     const bevatTeams = (e) =>
       naamVarianten(wedstrijd.teamA).some((v) => e.titel.includes(v)) &&
       naamVarianten(wedstrijd.teamB).some((v) => e.titel.includes(v))
+    // Herkent één titel als dé samenvatting van deze wedstrijd/etappe
+    const pastBijDeze = isTour
+      ? (e) => lijktEtappeSamenvatting(e.titel, wedstrijd.etappeNr)
+      : (e) => bevatTeams(e) && lijktSamenvatting(e.titel)
 
     // Zoekt de eerste écht bruikbare video: afspeelbaar, en — bij een
     // zoek-treffer — ook echt van NOS. Eerst de feeds (per definitie NOS),
@@ -290,8 +350,7 @@ async function main() {
     // video kan de stand in de titel hebben ("... (1-1)"); die slaan we over en
     // we zoeken door naar de NOS-versie.
     let zoekPool = null
-    const vindBruikbaar = async (predikaat) => {
-      const past = (e) => bevatTeams(e) && predikaat(e)
+    const vindBruikbaar = async (past) => {
       for (const entry of entries.filter(past)) {
         if (await haalVideoInfo(entry.videoId)) return entry
       }
@@ -305,7 +364,7 @@ async function main() {
 
     // Samenvatting
     if (!wedstrijd.youtubeId) {
-      const treffer = await vindBruikbaar((e) => lijktSamenvatting(e.titel))
+      const treffer = await vindBruikbaar(pastBijDeze)
       if (!treffer) {
         if (!STIL) console.log(`· Nog geen samenvatting: ${naam}`)
       } else if (await opslag.vul(wedstrijd.id, 'youtubeId', treffer.videoId)) {

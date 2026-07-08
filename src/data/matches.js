@@ -130,7 +130,7 @@ export const matches = [
   { id: 'af4', teamA: 'Mexico', teamB: 'Engeland', flagA: '🇲🇽', flagB: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', kickoff: '2026-07-06T02:00:00+02:00', stage: 'Achtste finale', youtubeId: null },
   { id: 'af5', teamA: 'Portugal', teamB: 'Spanje', flagA: '🇵🇹', flagB: '🇪🇸', kickoff: '2026-07-06T21:00:00+02:00', stage: 'Achtste finale', youtubeId: null },
   { id: 'af6', teamA: 'Verenigde Staten', teamB: 'België', flagA: '🇺🇸', flagB: '🇧🇪', kickoff: '2026-07-07T02:00:00+02:00', stage: 'Achtste finale', youtubeId: null },
-  { id: 'af7', teamA: 'Argentinië', teamB: 'Egypte', flagA: '🇦🇷', flagB: '🇪🇬', kickoff: '2026-07-07T18:00:00+02:00', stage: 'Achtste finale', youtubeId: null },
+  { id: 'af7', teamA: 'Argentinië', teamB: 'Egypte', flagA: '🇦🇷', flagB: '🇪🇬', kickoff: '2026-07-07T18:00:00+02:00', stage: 'Achtste finale', youtubeId: 'fDpuJAqFKJA' },
   { id: 'af8', teamA: 'Zwitserland', teamB: 'Colombia', flagA: '🇨🇭', flagB: '🇨🇴', kickoff: '2026-07-07T22:00:00+02:00', stage: 'Achtste finale', youtubeId: null },
 
   // Kwartfinales
