@@ -134,10 +134,10 @@ export const matches = [
   { id: 'af8', teamA: 'Zwitserland', teamB: 'Colombia', flagA: '🇨🇭', flagB: '🇨🇴', kickoff: '2026-07-07T22:00:00+02:00', stage: 'Achtste finale', youtubeId: null },
 
   // Kwartfinales
-  { id: 'kf1', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-09T22:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
-  { id: 'kf2', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-10T21:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
-  { id: 'kf3', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-11T23:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
-  { id: 'kf4', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-12T03:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
+  { id: 'kf1', teamA: 'Frankrijk', teamB: 'Marokko', flagA: '🇫🇷', flagB: '🇲🇦', kickoff: '2026-07-09T22:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
+  { id: 'kf2', teamA: 'Spanje', teamB: 'België', flagA: '🇪🇸', flagB: '🇧🇪', kickoff: '2026-07-10T21:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
+  { id: 'kf3', teamA: 'Noorwegen', teamB: 'Engeland', flagA: '🇳🇴', flagB: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', kickoff: '2026-07-11T23:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
+  { id: 'kf4', teamA: 'Argentinië', teamB: 'Zwitserland', flagA: '🇦🇷', flagB: '🇨🇭', kickoff: '2026-07-12T03:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
 
   // Halve finales
   { id: 'hf1', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-14T21:00:00+02:00', stage: 'Halve finale', youtubeId: null },
