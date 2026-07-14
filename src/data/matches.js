@@ -140,8 +140,8 @@ export const matches = [
   { id: 'kf4', teamA: 'Argentinië', teamB: 'Zwitserland', flagA: '🇦🇷', flagB: '🇨🇭', kickoff: '2026-07-12T03:00:00+02:00', stage: 'Kwartfinale', youtubeId: null },
 
   // Halve finales
-  { id: 'hf1', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-14T21:00:00+02:00', stage: 'Halve finale', youtubeId: null },
-  { id: 'hf2', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-15T21:00:00+02:00', stage: 'Halve finale', youtubeId: null },
+  { id: 'hf1', teamA: 'Frankrijk', teamB: 'Spanje', flagA: '🇫🇷', flagB: '🇪🇸', kickoff: '2026-07-14T21:00:00+02:00', stage: 'Halve finale', youtubeId: null },
+  { id: 'hf2', teamA: 'Engeland', teamB: 'Argentinië', flagA: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagB: '🇦🇷', kickoff: '2026-07-15T21:00:00+02:00', stage: 'Halve finale', youtubeId: null },
 
   // Troostfinale en finale
   { id: 'troost', teamA: 'Nog te bepalen', teamB: '', flagA: '', flagB: '', kickoff: '2026-07-18T22:00:00+02:00', stage: 'Troostfinale', youtubeId: null },
