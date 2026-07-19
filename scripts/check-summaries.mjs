@@ -104,6 +104,16 @@ async function haalFeed(bron) {
   return entries
 }
 
+// Video's rondom een wedstrijd die géén wedstrijdsamenvatting zijn (halftime
+// show, ceremonies, persconferenties, voor-/nabeschouwingen) dragen soms
+// hetzelfde NOS-metaformat "... | WK2026" mét beide teamnamen — en kunnen
+// zelfs "samenvatting" in de titel hebben ("samenvatting van de halftime
+// show", zo kreeg de finale de show i.p.v. de wedstrijd). Deze woorden staan
+// nooit in een echte wedstrijdsamenvatting, dus uitsluiten kost geen treffers.
+// Titels zijn al genormaliseerd (kleine letters, koppeltekens -> spaties).
+const GEEN_WEDSTRIJDVIDEO =
+  /\bhalf\s?time\b|\bhalftime\b|\brustshow\b|\bshow\b|ceremonie\b|\bopening\b|\bpersconferentie\b|\bvoorbeschouwing\b|\bnabeschouwing\b|\binterview\b|\breactie\b|\bhuldiging\b|\boptreden\b|\baftermovie\b/
+
 // Herkent een NOS-samenvatting aan de titel. Meestal staat het woord
 // "samenvatting" erin, maar soms vergeet NOS dat (bijv. "Verenigde Staten -
 // Paraguay | Groep D | WK2026" stond zonder dat woord online). Daarom
@@ -113,6 +123,7 @@ async function haalFeed(bron) {
 // live-moment en zou de stand kunnen verraden.
 function lijktSamenvatting(titel) {
   if (/\blive\b/.test(titel)) return false
+  if (GEEN_WEDSTRIJDVIDEO.test(titel)) return false
   return titel.includes('samenvatting') || /\|\s*wk\s?2026\b/.test(titel)
 }
 
