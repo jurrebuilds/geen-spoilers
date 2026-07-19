@@ -111,8 +111,11 @@ async function haalFeed(bron) {
 // show", zo kreeg de finale de show i.p.v. de wedstrijd). Deze woorden staan
 // nooit in een echte wedstrijdsamenvatting, dus uitsluiten kost geen treffers.
 // Titels zijn al genormaliseerd (kleine letters, koppeltekens -> spaties).
+// Let op aaneenschrijvingen: NOS titelde ook "Halftimeshow" als één woord,
+// dus "halftime" matcht als substring en "show\b" vangt elk woord dat op
+// show eindigt (halftimeshow, rustshow, talkshow).
 const GEEN_WEDSTRIJDVIDEO =
-  /\bhalf\s?time\b|\bhalftime\b|\brustshow\b|\bshow\b|ceremonie\b|\bopening\b|\bpersconferentie\b|\bvoorbeschouwing\b|\bnabeschouwing\b|\binterview\b|\breactie\b|\bhuldiging\b|\boptreden\b|\baftermovie\b/
+  /halftime|half\s?time|show\b|ceremonie\b|\bopening\b|persconferentie\b|voorbeschouwing\b|nabeschouwing\b|\binterview\b|\breactie\b|huldiging\b|optreden\b|aftermovie\b/
 
 // Herkent een NOS-samenvatting aan de titel. Meestal staat het woord
 // "samenvatting" erin, maar soms vergeet NOS dat (bijv. "Verenigde Staten -
